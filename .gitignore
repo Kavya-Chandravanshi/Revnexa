@@ -1,0 +1,43 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Environment Variables — NEVER commit real secrets
+.env
+.env.*
+# Exception: .env.example is safe (placeholder values only)
+!.env.example
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs and DB
+*.log
+*.sqlite
+*.sqlite3
+
+# Streamlit runtime
+.streamlit/
+.streamlit/secrets.toml
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# OS specific
+.DS_Store
+Thumbs.db
