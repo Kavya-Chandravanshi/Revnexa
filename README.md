@@ -1,8 +1,8 @@
-# RecoverPay AI: Autonomous Revenue Recovery Engine
+# Renexa: Autonomous Revenue Recovery Engine
 
 **Razorpay AI Buildathon — Track 03: AI Revenue Recovery**
 
-RecoverPay AI is an autonomous, policy-governed revenue recovery engine designed for Razorpay merchants. It intercepts failed payments, applies AI to diagnose failure root causes and customer context, subjects all recovery proposals to a strict deterministic policy engine, requires merchant approval for high-value transactions, executes recovery via Razorpay test-mode APIs, logs an append-only audit trail, and calculates batch recovery financial analytics.
+Renexa is an autonomous, policy-governed revenue recovery engine designed for Razorpay merchants. It intercepts failed payments, applies AI to diagnose failure root causes and customer context, subjects all recovery proposals to a strict deterministic policy engine, requires merchant approval for high-value transactions, executes recovery via Razorpay test-mode APIs, logs an append-only audit trail, and calculates batch recovery financial analytics.
 
 ---
 
