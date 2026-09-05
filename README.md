@@ -167,18 +167,28 @@ The application includes a resilient multi-mode execution layer:
 
 ---
 
-## 🧪 Running Automated Tests
+## ☁️ Deployment Instructions (Streamlit Community Cloud)
 
-Run the complete 92-test pytest suite:
+Revnexa is built as a native **Streamlit** dashboard application. The recommended platform for zero-config cloud deployment is **Streamlit Community Cloud**.
 
-```powershell
-.\.venv\Scripts\pytest.exe -v
-```
-
-All 92 tests cover data consistency, policy enforcement, Gemini mocking, Razorpay sandbox routing, approval queues, audit trails, and financial metric calculations.
+### Steps to Deploy:
+1. Sign in to [Streamlit Community Cloud](https://streamlit.io/cloud).
+2. Click **New app** and connect your GitHub account.
+3. Configure the repository settings:
+   - **Repository**: `Kavya-Chandravanshi/Revnexa`
+   - **Branch**: `master`
+   - **Main file path**: `app.py`
+4. Expand **Advanced settings...** $\rightarrow$ **Secrets** and configure your environment variables:
+   ```toml
+   RAZORPAY_KEY_ID = "rzp_test_your_key_id"
+   RAZORPAY_KEY_SECRET = "your_razorpay_secret"
+   GEMINI_API_KEY = "your_gemini_api_key"
+   ```
+5. Click **Deploy!**
 
 ---
 
 ## ⚠️ Simulation Disclaimer
 
 All customer profiles and transaction records in `data/synthetic_payments.json` are synthetic and generated for demonstration purposes. In Mock Sandbox mode, all recovered revenue metrics are simulated.
+
