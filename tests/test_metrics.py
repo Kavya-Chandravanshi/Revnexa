@@ -504,3 +504,52 @@ def test_payment_link_counter_ignores_failed_and_429_requests():
     assert metrics.total_recovered_revenue == 0.0
 
 
+def test_missing_execution_object_handles_gracefully():
+    """Verify outcome dictionaries without an 'execution' key do not raise ValidationError or crash calculation."""
+    p1 = sample_payment("p1", amount=2500.0)
+    outcomes = [
+        {"payment_id": "p1", "status": "AT_RISK"},  # Missing 'execution' key entirely
+        {
+            "payment_id": "p2",
+            "execution": RazorpayExecutionResult(
+                success=True,
+                action=RecoveryAction.RETRY,
+                recovery_id="rec_p2",
+                razorpay_id="ord_123",
+                status="SUCCESS",
+                amount=1000.0,
+                message="Executed",
+                simulated=True,
+            ),
+        },
+        {
+            "payment_id": "p3",
+            "execution": RazorpayExecutionResult(
+                success=False,
+                action=RecoveryAction.PAYMENT_LINK,
+                recovery_id="rec_p3",
+                razorpay_id=None,
+                status="FAILED",
+                amount=1500.0,
+                message="Failed",
+                simulated=True,
+            ),
+        },
+    ]
+    
+    # Helper logic mirrors app.py execution calculation safely
+    def is_execution_failed(outcome: dict) -> bool:
+        execution = outcome.get("execution")
+        if execution is None:
+            return False
+        return not bool(getattr(execution, "success", False))
+
+    failed_count = sum(1 for o in outcomes if is_execution_failed(o))
+    assert failed_count == 1  # Only p3 is a failed execution
+
+    # Verify metrics calculation runs smoothly
+    metrics = calculate_metrics([p1], outcomes, is_simulated=True)
+    assert metrics is not None
+
+
+

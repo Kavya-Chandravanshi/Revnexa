@@ -554,7 +554,14 @@ with tab_overview:
     # Action Center / What Needs Attention
     pending_high_val = len(st.session_state.queue.list_pending_requests())
     outcomes_dict = st.session_state.outcomes
-    failed_executions = sum(1 for o in outcomes_dict.values() if not o.get("execution", RazorpayExecutionResult(success=True)).success)
+    
+    def is_execution_failed(outcome: dict) -> bool:
+        execution = outcome.get("execution")
+        if execution is None:
+            return False
+        return not bool(getattr(execution, "success", False))
+
+    failed_executions = sum(1 for o in outcomes_dict.values() if is_execution_failed(o))
     links_generated = live_metrics.payment_links_created
 
     st.markdown(
