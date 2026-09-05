@@ -4,6 +4,7 @@ Orchestrates end-to-end pipeline execution (AI -> Policy -> Approval Gate -> Raz
 and computes mathematically sound, deterministic revenue recovery financial analytics.
 """
 
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -69,6 +70,7 @@ def calculate_metrics(
     total_opportunities = total_records
 
     actions_executed = 0
+    payment_links_created = 0
     successful_recoveries = 0
     failed_recoveries = 0
     blocked_actions = 0
@@ -97,6 +99,9 @@ def calculate_metrics(
         if exec_res:
             if exec_res.success and action in (RecoveryAction.PAYMENT_LINK, RecoveryAction.RETRY, RecoveryAction.INCENTIVE):
                 actions_executed += 1
+                if action in (RecoveryAction.PAYMENT_LINK, RecoveryAction.INCENTIVE):
+                    payment_links_created += 1
+
                 # Revenue is counted as RECOVERED only when status is RECOVERED or payment_confirmed is True
                 if status == "RECOVERED" or item.get("payment_confirmed"):
                     successful_recoveries += 1
@@ -132,12 +137,16 @@ def calculate_metrics(
     else:
         roi = round(net_recovered, 2) if net_recovered > 0 else 0.0
 
+    total_revenue_at_risk = round(total_failed_vol + total_at_risk_vol, 2)
+
     return BatchMetrics(
         total_records=total_records,
         total_failed_volume=round(total_failed_vol, 2),
         total_at_risk_volume=round(total_at_risk_vol, 2),
+        total_revenue_at_risk=total_revenue_at_risk,
         total_recovery_opportunities=total_opportunities,
         actions_executed=actions_executed,
+        payment_links_created=payment_links_created,
         successful_recoveries=successful_recoveries,
         failed_recoveries=failed_recoveries,
         blocked_actions=blocked_actions,
@@ -153,6 +162,47 @@ def calculate_metrics(
         roi=roi,
         is_simulated=is_simulated,
     )
+
+
+def simulate_mock_recovery_success(payment: PaymentRecord, action: RecoveryAction) -> bool:
+    """Deterministic simulation model for customer recovery completion in Mock Sandbox.
+    
+    Models realistic customer conversion:
+    - High-reputation customers (VIP/Repeat) experiencing transient technical errors (Network Timeout, Bank Down)
+      convert at high rates (75-85%).
+    - Customers with past payment limits or authentication issues convert at moderate rates (50-65%).
+    - Customers with insufficient funds convert at lower rates (35-45%).
+    - Incentives boost completion rate by +10%.
+    - All outcomes are 100% deterministic based on payment ID.
+    """
+    if action not in (RecoveryAction.PAYMENT_LINK, RecoveryAction.RETRY, RecoveryAction.INCENTIVE):
+        return False
+
+    seed_str = f"{payment.payment_id}:{payment.amount}:{action.value}"
+    h = int(hashlib.md5(seed_str.encode()).hexdigest()[:6], 16) % 100
+
+    from src.models import FailureReason
+    if payment.failure_reason in (FailureReason.NETWORK_TIMEOUT, FailureReason.BANK_SERVER_DOWN):
+        threshold = 75
+    elif payment.failure_reason == FailureReason.PAYMENT_LIMIT_EXCEEDED:
+        threshold = 60
+    elif payment.failure_reason == FailureReason.AUTHENTICATION_FAILED:
+        threshold = 55
+    elif payment.failure_reason == FailureReason.INSUFFICIENT_FUNDS:
+        threshold = 40
+    else:
+        threshold = 50
+
+    if payment.customer_previous_payments >= 5:
+        threshold += 15
+    elif payment.customer_previous_payments == 0:
+        threshold -= 15
+
+    if action == RecoveryAction.INCENTIVE:
+        threshold += 10
+
+    threshold = max(20, min(90, threshold))
+    return h < threshold
 
 
 def process_single_payment(
@@ -288,7 +338,13 @@ def process_single_payment(
 
             if execution_result.success:
                 # Differentiate between action execution (link/order created) vs confirmed recovery
-                if payment_confirmed or (rzp_client.is_mock and ai_rec.action in (RecoveryAction.PAYMENT_LINK, RecoveryAction.RETRY, RecoveryAction.INCENTIVE)):
+                is_confirmed = False
+                if payment_confirmed:
+                    is_confirmed = True
+                elif rzp_client.is_mock and ai_rec.action in (RecoveryAction.PAYMENT_LINK, RecoveryAction.RETRY, RecoveryAction.INCENTIVE):
+                    is_confirmed = simulate_mock_recovery_success(payment, ai_rec.action)
+
+                if is_confirmed:
                     outcome_status = "RECOVERED"
                 else:
                     outcome_status = "ACTION_EXECUTED"
@@ -298,7 +354,11 @@ def process_single_payment(
                     event_type=EVENT_RECOVERY_SUCCEEDED if outcome_status == "RECOVERED" else "ACTION_EXECUTED",
                     action=ai_rec.action.value,
                     status="SUCCESS",
-                    message=f"{'Simulated recovery confirmed: ' if outcome_status == 'RECOVERED' else 'Recovery action executed (Payment Link / Order created): '}{execution_result.message}",
+                    message=(
+                        f"Simulated payment recovery confirmed: {execution_result.message}"
+                        if outcome_status == "RECOVERED"
+                        else f"Recovery action executed (Payment Link / Order created, awaiting customer payment): {execution_result.message}"
+                    ),
                     recovery_id=execution_result.recovery_id,
                     metadata=execution_result.model_dump(),
                 )
@@ -308,7 +368,7 @@ def process_single_payment(
                     payment_id=pid,
                     event_type=EVENT_RECOVERY_FAILED,
                     action=ai_rec.action.value,
-                    status="FAILED",
+                    status=execution_result.status,
                     message=execution_result.message,
                     recovery_id=execution_result.recovery_id,
                 )

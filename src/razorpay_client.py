@@ -8,6 +8,7 @@ import hashlib
 import logging
 import os
 import re
+import time
 from typing import Any, Dict, Optional, Set, Tuple
 from uuid import uuid4
 
@@ -147,7 +148,15 @@ class RazorpayRecoveryClient:
             "reminder_enable": True,
             "notes": {"source": "Revnexa_Autonomous_Recovery"},
         }
-        return self._client.payment_link.create(payload)
+        try:
+            return self._client.payment_link.create(payload)
+        except Exception as e:
+            raw_err = str(e)
+            if "429" in raw_err or "too many requests" in raw_err.lower() or "rate limit" in raw_err.lower():
+                logger.warning("Razorpay rate limit (429) encountered. Backing off 1.5s and retrying once...")
+                time.sleep(1.5)
+                return self._client.payment_link.create(payload)
+            raise e
 
     def create_order(
         self,
@@ -182,7 +191,15 @@ class RazorpayRecoveryClient:
             "receipt": rcpt,
             "notes": notes or {"source": "Revnexa_Retry"},
         }
-        return self._client.order.create(payload)
+        try:
+            return self._client.order.create(payload)
+        except Exception as e:
+            raw_err = str(e)
+            if "429" in raw_err or "too many requests" in raw_err.lower() or "rate limit" in raw_err.lower():
+                logger.warning("Razorpay rate limit (429) encountered. Backing off 1.5s and retrying once...")
+                time.sleep(1.5)
+                return self._client.order.create(payload)
+            raise e
 
     def fetch_order(self, order_id: str) -> Dict[str, Any]:
         """Fetches status of a Razorpay Order."""
@@ -432,16 +449,24 @@ class RazorpayRecoveryClient:
             raw_err = str(e)
             safe_err = sanitize_secrets(raw_err, self.key_id, self.key_secret)
             logger.error("Razorpay execution failed: %s", safe_err)
+            is_429 = "429" in raw_err or "too many requests" in raw_err.lower() or "rate limit" in raw_err.lower()
+            error_code = "RATE_LIMITED" if is_429 else "API_ERROR"
+            status_val = "RATE_LIMITED" if is_429 else "FAILED"
+            msg = (
+                f"Razorpay Rate Limit Exceeded (HTTP 429): Too many requests. Safe backoff required. Action NOT EXECUTED: {safe_err}"
+                if is_429
+                else f"Razorpay API error: {safe_err}"
+            )
             return RazorpayExecutionResult(
                 success=False,
                 action=action,
                 recovery_id=recovery_id,
                 razorpay_id=None,
-                status="FAILED",
+                status=status_val,
                 amount=payment.amount,
-                message=f"Razorpay API error: {safe_err}",
+                message=msg,
                 simulated=self.is_mock,
-                error_code="API_ERROR",
+                error_code=error_code,
             )
 
         return RazorpayExecutionResult(

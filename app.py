@@ -212,8 +212,9 @@ agent: AIRecoveryAgent = st.session_state.ai_agent
 rzp_badge_class = "badge-mock" if client.is_mock else "badge-test"
 rzp_badge_text = "MOCK SANDBOX • SIMULATED" if client.is_mock else "RAZORPAY TEST MODE"
 
-ai_badge_class = "badge-gemini" if agent._client is not None else "badge-fallback"
-ai_badge_text = "AI: GEMINI" if agent._client is not None else "AI: FALLBACK (HEURISTIC)"
+active_ai_mode = st.session_state.get("active_ai_mode", "gemini" if agent._client is not None else "fallback")
+ai_badge_class = "badge-gemini" if active_ai_mode == "gemini" else "badge-fallback"
+ai_badge_text = "AI: GEMINI" if active_ai_mode == "gemini" else "AI: FALLBACK"
 
 st.markdown(
     f"""
@@ -237,7 +238,6 @@ st.markdown(
 # ---------------------------------------------------------------------------
 records = st.session_state.records
 total_records = len(records)
-total_failed_vol = sum(r.amount for r in records)
 
 # Calculate live metrics
 live_metrics: BatchMetrics = calculate_metrics(
@@ -254,21 +254,21 @@ with col1:
         f"""
         <div class="metric-card">
             <div class="metric-label">Revenue At Risk</div>
-            <div class="metric-val">INR {total_failed_vol:,.0f}</div>
-            <div class="metric-caption">{total_records} Failed / At-Risk Orders</div>
+            <div class="metric-val">INR {live_metrics.total_revenue_at_risk:,.0f}</div>
+            <div class="metric-caption">{total_records} Orders (Failed: INR {live_metrics.total_failed_volume:,.0f} • At-Risk: INR {live_metrics.total_at_risk_volume:,.0f})</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 with col2:
-    actions_exec = getattr(live_metrics, "actions_executed", 0)
+    links_created = getattr(live_metrics, "payment_links_created", 0)
     if client.is_mock:
         rev_label = "Simulated Recovered Revenue"
-        caption_text = f"{live_metrics.successful_recoveries} Simulated Recoveries • {actions_exec} Links Dispatched"
+        caption_text = f"{live_metrics.successful_recoveries} Simulated Recoveries • {links_created} Links Created"
     else:
         rev_label = "Confirmed Recovered Revenue"
-        caption_text = f"{live_metrics.successful_recoveries} Confirmed Paid • {actions_exec} Links Dispatched"
+        caption_text = f"{live_metrics.successful_recoveries} Confirmed Paid • {links_created} Links Created"
 
     st.markdown(
         f"""
@@ -497,10 +497,23 @@ with tab_queue:
     exec_res = current_outcome.get("execution")
 
     ai_rec_curr = agent.recommend(selected_payment)
+    st.session_state["active_ai_mode"] = ai_rec_curr.agent_mode
     policy_curr = evaluate_policy(selected_payment, ai_rec_curr.action, proposed_discount_pct=ai_rec_curr.proposed_discount_pct)
 
     appr_status_text = "NOT REQUIRED" if not policy_curr.requires_approval else ("APPROVED" if st.session_state.queue.is_approved(selected_pid) else "PENDING")
-    rzp_status_text = "EXECUTED" if exec_res and exec_res.success else ("BLOCKED" if policy_curr.decision == PolicyDecisionType.BLOCKED else "PENDING")
+    if exec_res:
+        if exec_res.success:
+            rzp_status_text = "EXECUTED"
+        elif exec_res.error_code == "RATE_LIMITED":
+            rzp_status_text = "RATE LIMITED (429)"
+        else:
+            rzp_status_text = "FAILED"
+    elif policy_curr.decision == PolicyDecisionType.BLOCKED:
+        rzp_status_text = "BLOCKED"
+    elif policy_curr.requires_approval:
+        rzp_status_text = "PENDING APPROVAL"
+    else:
+        rzp_status_text = "PENDING"
     final_status_text = current_outcome.get("status", selected_payment.payment_status.value)
 
     st.markdown(
@@ -569,8 +582,7 @@ with tab_queue:
                 <div style="font-size: 0.8rem; color: #64748b;">
                     <b>Confidence</b>: {ai_rec_curr.confidence*100:.0f}% &nbsp;|&nbsp; 
                     <b>Risk</b>: {ai_rec_curr.risk_level} &nbsp;|&nbsp; 
-                    <b>Discount</b>: {ai_rec_curr.proposed_discount_pct}%<br/>
-                    <b>Mode</b>: {ai_rec_curr.agent_mode.upper()}
+                    <b>Decision Source</b>: {"Gemini" if ai_rec_curr.agent_mode == "gemini" else "Deterministic Fallback"}
                 </div>
             </div>
             """,
@@ -666,8 +678,8 @@ with tab_queue:
 
     with ctrl_col2:
         if exec_res:
-            st.markdown("**Recovery Action Executed:**")
             if exec_res.success:
+                st.markdown("**Recovery Action Executed:**")
                 st.success(f"✓ Recovery Action Executed: {exec_res.action.value}")
                 st.json({
                     "Recovery Attempt ID": exec_res.recovery_id,
@@ -678,7 +690,17 @@ with tab_queue:
                     "Simulated": exec_res.simulated,
                 })
             else:
-                st.error(f"Execution Error: {exec_res.message}")
+                st.markdown("**Recovery Action Failed:**")
+                st.error(f"❌ Execution Error: {exec_res.message}")
+                if exec_res.error_code == "RATE_LIMITED":
+                    st.warning("⚠️ **Razorpay Rate Limited (HTTP 429)**: Too many requests. Safe backoff required. This action was NOT executed and is NOT counted as recovered revenue.")
+                st.json({
+                    "Recovery Attempt ID": exec_res.recovery_id,
+                    "Action Status": "NOT EXECUTED",
+                    "Error Code": exec_res.error_code,
+                    "Message": exec_res.message,
+                    "Simulated": exec_res.simulated,
+                })
 
 
 # ===========================================================================
@@ -752,13 +774,18 @@ with tab_workbench:
 
     fail_col1, fail_col2 = st.columns(2)
     with fail_col1:
-        sim_action = st.selectbox("Simulate AI Action Proposal:", [RecoveryAction.RETRY.value, RecoveryAction.INCENTIVE.value, "UNAUTHORIZED_SWIFT_TRANSFER"])
+        sim_action = st.selectbox(
+            "Simulate AI Action Proposal:",
+            [RecoveryAction.INCENTIVE.value, RecoveryAction.RETRY.value, "UNAUTHORIZED_SWIFT_TRANSFER"],
+            index=0,
+        )
         sim_discount = st.slider("Simulate Proposed Discount Percentage:", 0, 50, 25)
     with fail_col2:
         test_viol = evaluate_policy(demo_record, sim_action, proposed_discount_pct=float(sim_discount))
         st.markdown("**Policy Engine Reaction:**")
         if test_viol.decision == PolicyDecisionType.BLOCKED:
             st.error(f"❌ VIOLATION INTERCEPTED & BLOCKED:\n\n{test_viol.reason}")
+            st.caption(f"**Policy Code**: `{', '.join(test_viol.policy_codes)}` • Deterministic policy prevents excessive incentives.")
         elif test_viol.decision == PolicyDecisionType.REQUIRES_APPROVAL:
             st.warning(f"⚠️ APPROVAL FORCED BY SAFETY POLICY:\n\n{test_viol.reason}")
         else:
@@ -909,11 +936,13 @@ with tab_batch:
         status_msg.text("Executing AI context analysis and deterministic policy evaluations...")
         progress_bar.progress(50)
 
+        # Batch simulation strictly runs against Mock Sandbox to model confirmed recoveries without hitting external APIs
+        sim_client = RazorpayRecoveryClient(mode="mock")
         metrics_result, batch_outcomes = run_batch_recovery(
             records=records,
             approval_queue=st.session_state.queue,
             audit_logger=st.session_state.audit,
-            rzp_client=client,
+            rzp_client=sim_client,
             force_fallback=True,
         )
 
@@ -922,7 +951,7 @@ with tab_batch:
 
         st.session_state.batch_metrics = metrics_result
         progress_bar.progress(100)
-        status_msg.success("✅ 500 Records Processed Successfully!")
+        status_msg.success("✅ 500 Records Processed Successfully in Mock Sandbox!")
         st.rerun()
 
     # Display Batch Simulation Scorecard
@@ -933,13 +962,13 @@ with tab_batch:
         b_col1, b_col2, b_col3, b_col4 = st.columns(4)
         with b_col1:
             st.metric("Total Records Analyzed", f"{bm.total_records:,}")
-            st.metric("Total Failed Volume", f"INR {bm.total_failed_volume:,.2f}")
+            st.metric("Total Volume At Risk", f"INR {bm.total_revenue_at_risk:,.2f}", f"Failed: INR {bm.total_failed_volume:,.0f} • At-Risk: INR {bm.total_at_risk_volume:,.0f}")
         with b_col2:
-            st.metric("Automatically Recovered", f"{bm.successful_recoveries:,}", f"{bm.recovery_rate:.1f}% Recovery Rate")
+            st.metric("Simulated Recoveries", f"{bm.successful_recoveries:,}", f"{bm.recovery_rate:.1f}% Recovery Rate")
             st.metric("Simulated Recovered Revenue", f"INR {bm.total_recovered_revenue:,.2f}")
         with b_col3:
             st.metric("Held in Approval Queue", f"{bm.approvals_requested:,}", "Zero money counted until approved")
-            st.metric("Net Recovered Revenue", f"INR {bm.net_recovered_revenue:,.2f}")
+            st.metric("Net Simulated Revenue", f"INR {bm.net_recovered_revenue:,.2f}")
         with b_col4:
             st.metric("Terminal Safety Halts", f"{bm.blocked_actions + bm.escalations:,}", "Fraud & Retry Limit")
             st.metric("Financial ROI Multiple", f"{bm.roi:,.1f}x")

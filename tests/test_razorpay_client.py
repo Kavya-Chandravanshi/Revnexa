@@ -300,3 +300,25 @@ def test_16_secrets_never_appear_in_returned_error_text():
     assert "topsecretpassword999" not in sanitized
     assert "[REDACTED" in sanitized
     assert "rzp_test_abcdef12345678" not in sanitized
+
+
+def test_17_razorpay_429_rate_limit_handled_gracefully():
+    """17. Razorpay 429 Too Many Requests error produces RATE_LIMITED status and does not mark action as executed."""
+    client = RazorpayRecoveryClient(mode="test", key_id="rzp_test_validmockkey123", key_secret="valid_mock_secret")
+    client.is_mock = False
+    mock_rzp = MagicMock()
+    # Simulate 429 error
+    mock_rzp.payment_link.create.side_effect = RuntimeError("429 Client Error: Too Many Requests for url")
+    client._client = mock_rzp
+
+    payment = sample_payment()
+    policy = sample_policy_result()
+
+    res = client.execute_recovery(payment, RecoveryAction.PAYMENT_LINK, policy)
+    assert res.success is False
+    assert res.status == "RATE_LIMITED"
+    assert res.error_code == "RATE_LIMITED"
+    assert "429" in res.message or "Rate Limit" in res.message
+    # Confirm action was NOT added to executed actions
+    assert (payment.payment_id, RecoveryAction.PAYMENT_LINK.value) not in client._executed_actions
+

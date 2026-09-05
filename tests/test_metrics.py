@@ -407,3 +407,100 @@ def test_batch_recovery_performance_sub_second():
     assert batch_metrics.total_records == 500
     assert elapsed < 5.0, f"Batch recovery took {elapsed:.2f}s, expected < 5.0s"
 
+
+def test_canonical_500_dataset_reconciliation():
+    """Verify Overview and Batch volume at risk reconcile to the exact same portfolio total."""
+    import json
+    from pathlib import Path
+
+    p = Path(__file__).resolve().parent.parent / "data" / "synthetic_payments.json"
+    with open(p, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    records = [PaymentRecord.model_validate(r) for r in raw]
+
+    sum_all = round(sum(r.amount for r in records), 2)
+    metrics = calculate_metrics(records, [])
+
+    assert metrics.total_records == 500
+    assert metrics.total_revenue_at_risk == sum_all
+    assert round(metrics.total_failed_volume + metrics.total_at_risk_volume, 2) == sum_all
+
+
+def test_successful_mock_recovery_increments_simulated_revenue():
+    """Verify confirmed simulated recovery increments successful_recoveries and total_recovered_revenue."""
+    p1 = sample_payment("p1", amount=3500.0)
+    exec_res = RazorpayExecutionResult(
+        success=True,
+        action=RecoveryAction.PAYMENT_LINK,
+        recovery_id="rec_p1",
+        razorpay_id="mock_plink_p1",
+        status="PAYMENT_LINK_CREATED",
+        amount=3500.0,
+        message="Link dispatched",
+        simulated=True,
+    )
+    outcomes = [{
+        "status": "RECOVERED",
+        "action": RecoveryAction.PAYMENT_LINK,
+        "execution": exec_res,
+        "payment_confirmed": True,
+    }]
+    metrics = calculate_metrics([p1], outcomes, is_simulated=True)
+    assert metrics.successful_recoveries == 1
+    assert metrics.total_recovered_revenue == 3500.0
+    assert metrics.recovery_rate == 100.0
+
+
+def test_action_executed_without_confirmation_does_not_count_as_revenue():
+    """Verify action executed without confirmed payment produces 0 recovered revenue."""
+    p1 = sample_payment("p1", amount=3500.0)
+    exec_res = RazorpayExecutionResult(
+        success=True,
+        action=RecoveryAction.PAYMENT_LINK,
+        recovery_id="rec_p1",
+        razorpay_id="plink_p1",
+        status="PAYMENT_LINK_CREATED",
+        amount=3500.0,
+        message="Link dispatched",
+        simulated=False,
+    )
+    outcomes = [{
+        "status": "ACTION_EXECUTED",
+        "action": RecoveryAction.PAYMENT_LINK,
+        "execution": exec_res,
+        "payment_confirmed": False,
+    }]
+    metrics = calculate_metrics([p1], outcomes, is_simulated=False)
+    assert metrics.actions_executed == 1
+    assert metrics.payment_links_created == 1
+    assert metrics.successful_recoveries == 0
+    assert metrics.total_recovered_revenue == 0.0
+    assert metrics.recovery_rate == 0.0
+
+
+def test_payment_link_counter_ignores_failed_and_429_requests():
+    """Verify payment_links_created does NOT increment on failed or 429 gateway calls."""
+    p1 = sample_payment("p1", amount=2500.0)
+    exec_fail = RazorpayExecutionResult(
+        success=False,
+        action=RecoveryAction.PAYMENT_LINK,
+        recovery_id="rec_fail",
+        razorpay_id=None,
+        status="RATE_LIMITED",
+        amount=2500.0,
+        message="Rate limit 429",
+        simulated=False,
+        error_code="RATE_LIMITED",
+    )
+    outcomes = [{
+        "status": "FAILED",
+        "action": RecoveryAction.PAYMENT_LINK,
+        "execution": exec_fail,
+    }]
+    metrics = calculate_metrics([p1], outcomes, is_simulated=False)
+    assert metrics.payment_links_created == 0
+    assert metrics.actions_executed == 0
+    assert metrics.successful_recoveries == 0
+    assert metrics.total_recovered_revenue == 0.0
+
+

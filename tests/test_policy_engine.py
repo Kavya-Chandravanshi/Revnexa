@@ -307,3 +307,17 @@ def test_negative_discount_blocked():
     assert CODE_INCENTIVE_CAP_EXCEEDED in result.policy_codes
     assert "negative" in result.reason.lower()
 
+
+def test_19_deliberate_unsafe_playground_scenario_blocked():
+    """19. Deliberate unsafe playground proposal (INCENTIVE with 25% discount) is strictly BLOCKED."""
+    payment = create_sample_payment(amount=3200.0)
+    result = evaluate_policy(payment, RecoveryAction.INCENTIVE, proposed_discount_pct=25.0)
+
+    assert result.decision == PolicyDecisionType.BLOCKED
+    assert result.allowed is False
+    assert result.requires_approval is False
+    assert CODE_INCENTIVE_CAP_EXCEEDED in result.policy_codes
+    assert "exceeds maximum allowed limit" in result.reason.lower()
+    assert result.effective_discount == 0.0
+
+
