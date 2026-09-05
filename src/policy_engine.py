@@ -88,8 +88,20 @@ class PolicyEngine:
             )
 
         # -------------------------------------------------------------------
-        # STEP 2: Validate payment state
+        # STEP 2: Validate payment state and amount
         # -------------------------------------------------------------------
+        if payment.amount <= 0:
+            return PolicyResult(
+                decision=PolicyDecisionType.BLOCKED,
+                allowed=False,
+                requires_approval=False,
+                reason=f"Transaction amount must be strictly positive (got INR {payment.amount:,.2f}).",
+                policy_codes=[CODE_INVALID_PAYMENT_STATE],
+                payment_id=payment.payment_id,
+                action=validated_action,
+                final_payable_amount=payment.amount,
+            )
+
         allowed_states = {PaymentStatus.FAILED, PaymentStatus.AT_RISK}
         if payment.payment_status not in allowed_states:
             return PolicyResult(
@@ -217,6 +229,20 @@ class PolicyEngine:
         effective_discount = 0.0
 
         if validated_action == RecoveryAction.INCENTIVE:
+            # 0. Check if percentage or amount is negative
+            if proposed_discount_pct < 0 or (proposed_discount_amount is not None and proposed_discount_amount < 0):
+                return PolicyResult(
+                    decision=PolicyDecisionType.BLOCKED,
+                    allowed=False,
+                    requires_approval=False,
+                    reason="Proposed incentive percentage or amount cannot be negative.",
+                    max_allowed_discount=max_allowed_discount,
+                    policy_codes=[CODE_INCENTIVE_CAP_EXCEEDED],
+                    payment_id=payment.payment_id,
+                    action=validated_action,
+                    final_payable_amount=payment.amount,
+                )
+
             # 1. Check if percentage exceeds cap
             if proposed_discount_pct > (self.max_discount_pct + 0.001):
                 return PolicyResult(

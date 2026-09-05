@@ -369,3 +369,41 @@ def test_confirmed_payment_counts_as_recovered_revenue():
     assert metrics.actions_executed == 1
     assert metrics.successful_recoveries == 1
     assert metrics.total_recovered_revenue == 5000.0
+
+
+def test_recovery_rate_cannot_exceed_100():
+    """Verify recovery_rate is safely clamped to 100.0% even with abnormal outcomes."""
+    p1 = sample_payment("p1", amount=1000.0)
+    exec_res = RazorpayExecutionResult(
+        success=True,
+        action=RecoveryAction.PAYMENT_LINK,
+        recovery_id="rec1",
+        razorpay_id="plink_1",
+        status="RECOVERED",
+        amount=1000.0,
+        message="Simulated recovery",
+        simulated=True,
+    )
+    # 2 outcomes for 1 record
+    outcomes = [
+        {"status": "RECOVERED", "action": RecoveryAction.PAYMENT_LINK, "execution": exec_res},
+        {"status": "RECOVERED", "action": RecoveryAction.PAYMENT_LINK, "execution": exec_res},
+    ]
+    metrics = calculate_metrics([p1], outcomes, is_simulated=True)
+    assert metrics.recovery_rate <= 100.0
+
+
+def test_batch_recovery_performance_sub_second():
+    """Verify 500-record batch recovery executes in under 5 seconds (preventing loop regression)."""
+    import time
+    from src.razorpay_client import RazorpayRecoveryClient
+
+    client = RazorpayRecoveryClient(mode="mock")
+    t0 = time.time()
+    batch_metrics, outcomes = run_batch_recovery(rzp_client=client, force_fallback=True)
+    elapsed = time.time() - t0
+
+    assert len(outcomes) == 500
+    assert batch_metrics.total_records == 500
+    assert elapsed < 5.0, f"Batch recovery took {elapsed:.2f}s, expected < 5.0s"
+

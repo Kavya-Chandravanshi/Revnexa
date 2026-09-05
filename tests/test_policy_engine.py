@@ -283,3 +283,27 @@ def test_high_value_incentive_requires_approval():
     assert result.effective_discount == 400.0
     assert result.final_payable_amount == 19600.0
     assert CODE_HIGH_VALUE_APPROVAL in result.policy_codes
+
+
+def test_non_positive_amount_blocked():
+    """17. Non-positive transaction amounts are blocked by policy engine."""
+    payment = create_sample_payment(amount=100.0)
+    payment.amount = 0.0  # bypass pydantic gt=0 to test policy engine fail-closed
+    result = evaluate_policy(payment, RecoveryAction.PAYMENT_LINK)
+
+    assert result.decision == PolicyDecisionType.BLOCKED
+    assert result.allowed is False
+    assert CODE_INVALID_PAYMENT_STATE in result.policy_codes
+    assert "positive" in result.reason.lower()
+
+
+def test_negative_discount_blocked():
+    """18. Negative discount percentage or amount is strictly blocked."""
+    payment = create_sample_payment(amount=2000.0)
+    result = evaluate_policy(payment, RecoveryAction.INCENTIVE, proposed_discount_pct=-5.0)
+
+    assert result.decision == PolicyDecisionType.BLOCKED
+    assert result.allowed is False
+    assert CODE_INCENTIVE_CAP_EXCEEDED in result.policy_codes
+    assert "negative" in result.reason.lower()
+

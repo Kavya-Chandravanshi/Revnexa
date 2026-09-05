@@ -169,13 +169,13 @@ The application includes a resilient multi-mode execution layer:
 
 ## 🧪 Running Automated Tests
 
-Run the complete 82-test pytest suite:
+Run the complete 86-test pytest suite:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -v
 ```
 
-All 82 tests cover data consistency, policy enforcement, Gemini mocking, Razorpay sandbox routing, approval queues, audit trails, and financial metric calculations.
+All 86 tests cover data consistency, policy enforcement, Gemini mocking, Razorpay sandbox routing, approval queues, audit trails, and financial metric calculations.
 
 ---
 

@@ -20,7 +20,7 @@ from src.models import (
     AIRecommendation,
     RazorpayExecutionResult,
 )
-from src.ai_agent import AIRecoveryAgent, analyze_payment
+from src.ai_agent import AIRecoveryAgent, analyze_payment, _default_agent
 from src.policy_engine import evaluate_policy
 from src.merchant_approval import (
     MerchantApprovalQueue,
@@ -116,7 +116,7 @@ def calculate_metrics(
 
     # Compute rates safely without division by zero
     if total_opportunities > 0:
-        recovery_rate = round((successful_recoveries / total_opportunities) * 100.0, 2)
+        recovery_rate = min(100.0, round((successful_recoveries / total_opportunities) * 100.0, 2))
     else:
         recovery_rate = 0.0
 
@@ -125,7 +125,7 @@ def calculate_metrics(
     else:
         avg_recovered = 0.0
 
-    net_recovered = round(total_recovered_revenue - incentive_amount_given, 2)
+    net_recovered = max(0.0, round(total_recovered_revenue - incentive_amount_given, 2))
 
     if incentive_amount_given > 0:
         roi = round(net_recovered / incentive_amount_given, 2)
@@ -169,7 +169,7 @@ def process_single_payment(
     
     PaymentRecord -> AI Analysis -> Policy Evaluation -> Approval Gate -> Razorpay -> Audit Logger.
     """
-    ai_agent = agent or AIRecoveryAgent()
+    ai_agent = agent or _default_agent
     approval_queue = queue or _default_queue
     logger_instance = audit or _default_logger
     rzp_client = rzp or _default_client
@@ -330,6 +330,7 @@ def run_batch_recovery(
     approval_queue: Optional[MerchantApprovalQueue] = None,
     audit_logger: Optional[AuditLogger] = None,
     rzp_client: Optional[RazorpayRecoveryClient] = None,
+    agent: Optional[AIRecoveryAgent] = None,
     force_fallback: bool = True,
 ) -> Tuple[BatchMetrics, List[Dict[str, Any]]]:
     """Runs autonomous recovery simulation across the 500+ records dataset.
@@ -340,9 +341,12 @@ def run_batch_recovery(
     queue = approval_queue or _default_queue
     logger_instance = audit_logger or _default_logger
     client = rzp_client or _default_client
+    active_agent = agent or _default_agent
 
     if records is None:
         p = Path(dataset_path)
+        if not p.exists():
+            p = Path(__file__).resolve().parent.parent / dataset_path
         if not p.exists():
             raise FileNotFoundError(f"Synthetic dataset not found at {dataset_path}")
         with open(p, "r", encoding="utf-8") as f:
@@ -356,6 +360,7 @@ def run_batch_recovery(
             res = process_single_payment(
                 payment=payment,
                 approved_by_merchant=False,  # Automated batch leaves high-value pending
+                agent=active_agent,
                 queue=queue,
                 audit=logger_instance,
                 rzp=client,

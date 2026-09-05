@@ -367,7 +367,15 @@ class AIRecoveryAgent:
                     raise model_err
 
             # Parse and validate response
-            raw_text = response.text
+            raw_text = response.text or ""
+            raw_text = raw_text.strip()
+            if raw_text.startswith("```json"):
+                raw_text = raw_text[7:]
+            elif raw_text.startswith("```"):
+                raw_text = raw_text[3:]
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3]
+            raw_text = raw_text.strip()
             data = json.loads(raw_text)
 
             # Ensure valid action enum

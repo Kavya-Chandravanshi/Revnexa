@@ -149,6 +149,8 @@ def load_dataset() -> List[PaymentRecord]:
     """Loads 500+ records once from synthetic_payments.json."""
     dataset_path = Path("data/synthetic_payments.json")
     if not dataset_path.exists():
+        dataset_path = Path(__file__).resolve().parent / "data" / "synthetic_payments.json"
+    if not dataset_path.exists():
         from src.data_generator import generate_synthetic_dataset
         return generate_synthetic_dataset(500, output_path=dataset_path)
     with open(dataset_path, "r", encoding="utf-8") as f:
