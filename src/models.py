@@ -1,4 +1,4 @@
-"""Core data models and enums for RecoverPay AI.
+"""Core data models and enums for Revnexa.
 
 Defines Pydantic schemas for payment records, recovery actions, failure reasons,
 and structured exchange between AI and deterministic layers.

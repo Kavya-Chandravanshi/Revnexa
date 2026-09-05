@@ -1,8 +1,12 @@
-# RecoverPay AI: Autonomous Revenue Recovery Engine
+# Revnexa
+
+**AI-Powered Revenue Recovery Engine**
+
+> *Recover lost revenue before it slips away.*
 
 **Razorpay AI Buildathon — Track 03: AI Revenue Recovery**
 
-RecoverPay AI is an autonomous, policy-governed revenue recovery engine designed for Razorpay merchants. It intercepts failed payments, applies AI to diagnose failure root causes and customer context, subjects all recovery proposals to a strict deterministic policy engine, requires merchant approval for high-value transactions, executes recovery via Razorpay test-mode APIs, logs an append-only audit trail, and calculates batch recovery financial analytics.
+Revnexa is an autonomous, policy-governed revenue recovery engine designed for Razorpay merchants. It intercepts failed payments, applies AI to diagnose failure root causes and customer context, subjects all recovery proposals to a strict deterministic policy engine, requires merchant approval for high-value transactions, executes recovery via Razorpay test-mode APIs, logs an append-only audit trail, and calculates batch recovery financial analytics.
 
 ---
 
@@ -165,13 +169,13 @@ The application includes a resilient multi-mode execution layer:
 
 ## 🧪 Running Automated Tests
 
-Run the complete 80-test pytest suite:
+Run the complete 82-test pytest suite:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -v
 ```
 
-All 80 tests cover data consistency, policy enforcement, Gemini mocking, Razorpay sandbox routing, approval queues, audit trails, and financial metric calculations.
+All 82 tests cover data consistency, policy enforcement, Gemini mocking, Razorpay sandbox routing, approval queues, audit trails, and financial metric calculations.
 
 ---
 

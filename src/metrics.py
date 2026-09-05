@@ -1,4 +1,4 @@
-"""Batch Revenue Recovery Engine & Financial Metrics for RecoverPay AI.
+"""Batch Revenue Recovery Engine & Financial Metrics for Revnexa.
 
 Orchestrates end-to-end pipeline execution (AI -> Policy -> Approval Gate -> Razorpay Execution -> Audit Logger)
 and computes mathematically sound, deterministic revenue recovery financial analytics.

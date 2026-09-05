@@ -1,4 +1,4 @@
-"""RecoverPay AI - Interactive Streamlit Command Center Dashboard.
+"""Revnexa - Interactive Streamlit Command Center Dashboard.
 
 Track 03: AI Revenue Recovery (Razorpay AI Buildathon)
 Autonomous, policy-governed revenue recovery engine for Razorpay merchants.
@@ -56,7 +56,7 @@ load_dotenv()
 # Streamlit Page Configuration & Modern Light Theme
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="RecoverPay AI | Merchant Command Center",
+    page_title="Revnexa | Merchant Command Center",
     page_icon="💳",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -217,8 +217,9 @@ st.markdown(
     f"""
     <div class="top-header">
         <div>
-            <h1 class="top-title">RecoverPay AI</h1>
-            <div class="top-subtitle">Autonomous AI Revenue Recovery Engine for Razorpay Merchants</div>
+            <h1 class="top-title">REVNEXA</h1>
+            <div class="top-subtitle">AI-Powered Revenue Recovery Engine</div>
+            <div style="font-size:0.85rem; color:#6b7280; margin-top:0.2rem; font-style:italic;">Recover lost revenue before it slips away.</div>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
             <span class="badge {rzp_badge_class}">{rzp_badge_text}</span>

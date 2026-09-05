@@ -1,4 +1,4 @@
-"""AI Recovery Agent for RecoverPay AI.
+"""AI Recovery Agent for Revnexa.
 
 Analyzes transaction context and customer payment history to recommend
 the optimal revenue recovery action using Google Gemini structured output,

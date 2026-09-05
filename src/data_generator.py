@@ -1,4 +1,4 @@
-"""Synthetic Payment Dataset Generator for RecoverPay AI.
+"""Synthetic Payment Dataset Generator for Revnexa.
 
 Generates 500+ realistic, internally consistent failed or at-risk payment transactions
 reflecting real Razorpay failure modes, customer profiles, and product categories.
@@ -280,7 +280,7 @@ def print_dataset_summary(records: List[PaymentRecord]) -> None:
     vip_custs = sum(1 for r in records if r.customer_total_spend >= 25000.0)
 
     print("=" * 65)
-    print(" RECOVERPAY AI - SYNTHETIC DATASET SUMMARY")
+    print(" REVNEXA - SYNTHETIC DATASET SUMMARY")
     print("=" * 65)
     print(f"Total Records Generated    : {total_records}")
     print(f"Total Failed Volume        : INR {total_value:,.2f}")
@@ -305,7 +305,7 @@ def print_dataset_summary(records: List[PaymentRecord]) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate synthetic payment records for RecoverPay AI.")
+    parser = argparse.ArgumentParser(description="Generate synthetic payment records for Revnexa.")
     parser.add_argument(
         "--count",
         type=int,

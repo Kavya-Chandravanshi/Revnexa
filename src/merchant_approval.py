@@ -1,4 +1,4 @@
-"""Merchant Approval Queue for RecoverPay AI.
+"""Merchant Approval Queue for Revnexa.
 
 Manages high-value and policy-flagged recovery actions requiring human-in-the-loop sign-off.
 Provides a local, in-memory queue that can be easily queried and updated by the dashboard.

@@ -1,4 +1,4 @@
-"""Append-Only Audit Logger for RecoverPay AI.
+"""Append-Only Audit Logger for Revnexa.
 
 Captures immutable, chronological records of all system state transitions,
 AI proposals, policy decisions, merchant approvals, and Razorpay recovery results.

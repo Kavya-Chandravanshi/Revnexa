@@ -1,1 +1,1 @@
-"""Tests package for RecoverPay AI."""
+"""Tests package for Revnexa."""

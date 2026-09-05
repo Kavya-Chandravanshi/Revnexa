@@ -1,4 +1,4 @@
-"""Deterministic Policy Engine and Safety Guardrails for RecoverPay AI.
+"""Deterministic Policy Engine and Safety Guardrails for Revnexa.
 
 Enforces non-negotiable financial, risk, and operational boundaries.
 Contains ZERO LLM / generative components and ZERO external API dependencies.

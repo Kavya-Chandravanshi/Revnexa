@@ -1,4 +1,4 @@
-"""Razorpay Test-Mode Service & Mock Sandbox Client for RecoverPay AI.
+"""Razorpay Test-Mode Service & Mock Sandbox Client for Revnexa.
 
 Wraps Razorpay Test-Mode APIs (Payment Links, Orders) with a deterministic
 mock fallback sandbox, strict policy enforcement, and duplicate action protection.
@@ -81,7 +81,7 @@ class RazorpayRecoveryClient:
             try:
                 import razorpay
                 self._client = razorpay.Client(auth=(self.key_id, self.key_secret))
-                self._client.set_app_details({"title": "RecoverPay AI", "version": "0.1.0"})
+                self._client.set_app_details({"title": "Revnexa", "version": "0.1.0"})
             except Exception as e:
                 logger.warning("Failed to initialize Razorpay Client: %s. Reverting to Mock Sandbox.", e)
                 self.is_mock = True
@@ -104,7 +104,7 @@ class RazorpayRecoveryClient:
         customer_name: str,
         customer_email: str,
         customer_phone: Optional[str] = None,
-        description: str = "RecoverPay AI Payment Link",
+        description: str = "Revnexa Payment Link",
         reference_id: Optional[str] = None,
         expire_by_hours: int = 48,
     ) -> Dict[str, Any]:
@@ -145,7 +145,7 @@ class RazorpayRecoveryClient:
             },
             "notify": {"sms": False, "email": True},
             "reminder_enable": True,
-            "notes": {"source": "RecoverPay_AI_Autonomous_Recovery"},
+            "notes": {"source": "Revnexa_Autonomous_Recovery"},
         }
         return self._client.payment_link.create(payload)
 
@@ -180,7 +180,7 @@ class RazorpayRecoveryClient:
             "amount": amount_paise,
             "currency": currency,
             "receipt": rcpt,
-            "notes": notes or {"source": "RecoverPay_AI_Retry"},
+            "notes": notes or {"source": "Revnexa_Retry"},
         }
         return self._client.order.create(payload)
 
