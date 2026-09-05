@@ -1,7 +1,8 @@
-"""Revnexa - Interactive Streamlit Command Center Dashboard.
+"""Revnexa - Interactive Autonomous Revenue Recovery Engine Command Center.
 
 Track 03: AI Revenue Recovery (Razorpay AI Buildathon)
 Autonomous, policy-governed revenue recovery engine for Razorpay merchants.
+Designed as an intelligent, dark-first AI Operations Center.
 """
 
 import json
@@ -53,89 +54,299 @@ from src.metrics import calculate_metrics, run_batch_recovery, process_single_pa
 load_dotenv()
 
 # ---------------------------------------------------------------------------
-# Streamlit Page Configuration & Modern Light Theme
+# Streamlit Page Configuration & Modern Dark-First Styling
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Revnexa | Merchant Command Center",
-    page_icon="💳",
+    page_title="Revnexa | AI Revenue Operations Center",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Custom CSS for modern Razorpay/fintech aesthetic
+
+def format_inr(val: float, compact: bool = True) -> str:
+    """Format monetary values into Indian currency notations (Lakhs, Crores, or Thousands)."""
+    if val is None:
+        return "₹0.00"
+    abs_val = abs(val)
+    if compact:
+        if abs_val >= 10000000:
+            return f"₹{val / 10000000:.2f} Cr"
+        elif abs_val >= 100000:
+            return f"₹{val / 100000:.2f}L"
+        elif abs_val >= 1000:
+            return f"₹{val / 1000:.1f}k"
+    return f"₹{val:,.2f}"
+
+
+# Custom CSS Injection for Futuristic Dark-First AI Operations Center Theme
 st.markdown(
     """
     <style>
-    /* Main Layout & Fonts */
-    .main { background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    
-    /* Top Header Bar */
-    .top-header {
+    /* Dark Surface & Global Typography */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    code, pre, .font-mono {
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    .stApp {
+        background: radial-gradient(circle at 10% 10%, #0d1527 0%, #080c14 100%);
+        color: #f1f5f9;
+    }
+
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #0c121e !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+    }
+
+    /* Top Command Header */
+    .top-header-dark {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: #ffffff !important;
-        padding: 1.2rem 2rem;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
+        background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.8) 100%);
+        backdrop-filter: blur(12px);
+        padding: 1.25rem 2rem;
+        border-radius: 14px;
+        border: 1px solid rgba(56, 189, 248, 0.15);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(56, 189, 248, 0.08);
         margin-bottom: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    .top-header h1, .top-header .top-title {
+
+    .top-brand {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .brand-logo-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #0284c7 0%, #6366f1 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        font-size: 1.5rem;
+    }
+
+    .top-title-dark {
         font-size: 1.6rem !important;
-        font-weight: 700 !important;
-        color: #0f172a !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.03em;
+        background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin: 0 !important;
         padding: 0 !important;
-        line-height: 1.3 !important;
+        line-height: 1.2 !important;
+    }
+
+    .top-subtitle-dark {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        font-weight: 500;
+        margin-top: 0.15rem;
+    }
+
+    /* Badges */
+    .badge-capsule {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .badge-cyan-glow {
+        background: rgba(14, 165, 233, 0.12);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+    }
+
+    .badge-amber-glow {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .badge-emerald-glow {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .badge-rose-glow {
+        background: rgba(244, 63, 94, 0.12);
+        color: #fb7185;
+        border: 1px solid rgba(251, 113, 133, 0.3);
+    }
+
+    .badge-slate-pill {
+        background: rgba(148, 163, 184, 0.1);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    /* Metric Cards */
+    .kpi-card-dark {
+        background: linear-gradient(160deg, rgba(17, 24, 39, 0.8) 0%, rgba(15, 23, 42, 0.6) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 12px;
+        padding: 1.1rem 1.25rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .kpi-card-dark:hover {
+        border-color: rgba(56, 189, 248, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .kpi-card-dark::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #38bdf8, transparent);
+    }
+
+    .kpi-title {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .kpi-num {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: #f8fafc;
+        margin: 0.3rem 0;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .kpi-sub {
+        font-size: 0.73rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    /* Attention Box */
+    .attention-box {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(251, 191, 36, 0.25);
+        border-radius: 12px;
+        padding: 1rem 1.4rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Connected Recovery Map */
+    .recovery-map {
+        display: flex;
+        align-items: stretch;
+        background: rgba(13, 21, 39, 0.6);
+        border: 1px solid rgba(56, 189, 248, 0.15);
+        border-radius: 14px;
+        padding: 1.25rem 1rem;
+        margin: 1.25rem 0 1.5rem 0;
+        gap: 0.6rem;
+        overflow-x: auto;
+    }
+
+    .map-step {
+        flex: 1;
+        min-width: 130px;
+        background: rgba(17, 24, 39, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 0.9rem 0.8rem;
+        text-align: center;
+        position: relative;
+    }
+
+    .map-step.active {
+        border-color: rgba(56, 189, 248, 0.4);
+        background: linear-gradient(180deg, rgba(56, 189, 248, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%);
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.1);
+    }
+
+    .map-step-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .map-step-val {
+        font-size: 0.88rem;
+        font-weight: 700;
+        margin-top: 0.35rem;
+    }
+
+    .map-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(56, 189, 248, 0.4);
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    /* Streamlit Tabs Customization */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0.5rem;
+        background-color: rgba(15, 23, 42, 0.6);
+        padding: 0.3rem 0.5rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 42px;
+        border-radius: 8px;
+        color: #94a3b8 !important;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0 1.2rem;
         border: none !important;
     }
-    .top-subtitle { font-size: 0.9rem; color: #64748b !important; margin-top: 0.2rem; }
-    
-    /* Badges */
-    .badge {
-        display: inline-block;
-        padding: 0.25rem 0.65rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.025em;
+
+    .stTabs [aria-selected="true"] {
+        background-color: rgba(56, 189, 248, 0.15) !important;
+        color: #38bdf8 !important;
+        border: 1px solid rgba(56, 189, 248, 0.3) !important;
     }
-    .badge-mock { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-    .badge-test { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-    .badge-gemini { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
-    .badge-fallback { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-    .badge-allowed { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .badge-blocked { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-    .badge-approval { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-    
-    /* Metric Cards */
-    .metric-card {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.8rem 0.9rem;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+
+    /* Panel Card */
+    .panel-card {
+        background: rgba(17, 24, 39, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
     }
-    .metric-label { font-size: 0.7rem; font-weight: 600; color: #64748b !important; text-transform: uppercase; letter-spacing: 0.04em; }
-    .metric-val { font-size: 1.35rem; font-weight: 700; color: #0f172a !important; margin: 0.2rem 0; }
-    .metric-caption { font-size: 0.7rem; color: #94a3b8 !important; }
-    
-    /* Flow Tracker */
-    .workflow-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 1rem 1.5rem;
-        margin: 1rem 0 1.5rem 0;
-    }
-    .flow-step { text-align: center; flex: 1; }
-    .flow-step-title { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
-    .flow-step-status { font-size: 0.9rem; font-weight: 700; margin-top: 0.2rem; }
-    .flow-arrow { color: #cbd5e1; font-weight: 700; font-size: 1.2rem; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -174,16 +385,14 @@ if "ai_agent" not in st.session_state:
     st.session_state.ai_agent = AIRecoveryAgent()
 
 if "outcomes" not in st.session_state:
-    # Maps payment_id -> outcome dict
     st.session_state.outcomes = {}
 
 if "batch_metrics" not in st.session_state:
-    # Precompute baseline metrics
     st.session_state.batch_metrics = None
 
 
 # ---------------------------------------------------------------------------
-# Precompute initial diagnoses fast via Heuristic for snappy table loading
+# Precompute initial diagnoses fast via Heuristic for instant responsive queue
 # ---------------------------------------------------------------------------
 @st.cache_data
 def get_precomputed_diagnoses() -> Dict[str, Dict[str, Any]]:
@@ -200,33 +409,36 @@ def get_precomputed_diagnoses() -> Dict[str, Dict[str, Any]]:
         }
     return results
 
+
 precomputed = get_precomputed_diagnoses()
 
 
 # ---------------------------------------------------------------------------
-# TOP HEADER COMPONENT
+# TOP COMMAND HEADER
 # ---------------------------------------------------------------------------
 client: RazorpayRecoveryClient = st.session_state.rzp_client
 agent: AIRecoveryAgent = st.session_state.ai_agent
 
-rzp_badge_class = "badge-mock" if client.is_mock else "badge-test"
+rzp_badge_class = "badge-amber-glow" if client.is_mock else "badge-cyan-glow"
 rzp_badge_text = "MOCK SANDBOX • SIMULATED" if client.is_mock else "RAZORPAY TEST MODE"
 
 active_ai_mode = st.session_state.get("active_ai_mode", "gemini" if agent._client is not None else "fallback")
-ai_badge_class = "badge-gemini" if active_ai_mode == "gemini" else "badge-fallback"
+ai_badge_class = "badge-cyan-glow" if active_ai_mode == "gemini" else "badge-slate-pill"
 ai_badge_text = "AI: GEMINI" if active_ai_mode == "gemini" else "AI: FALLBACK"
 
 st.markdown(
     f"""
-    <div class="top-header">
-        <div>
-            <h1 class="top-title">REVNEXA</h1>
-            <div class="top-subtitle">AI-Powered Revenue Recovery Engine</div>
-            <div style="font-size:0.85rem; color:#6b7280; margin-top:0.2rem; font-style:italic;">Recover lost revenue before it slips away.</div>
+    <div class="top-header-dark">
+        <div class="top-brand">
+            <div class="brand-logo-icon">⚡</div>
+            <div>
+                <h1 class="top-title-dark">REVNEXA</h1>
+                <div class="top-subtitle-dark">Autonomous Revenue Recovery Engine • Razorpay Buildathon</div>
+            </div>
         </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <span class="badge {rzp_badge_class}">{rzp_badge_text}</span>
-            <span class="badge {ai_badge_class}">{ai_badge_text}</span>
+        <div style="display: flex; gap: 0.6rem; align-items: center;">
+            <span class="badge-capsule {rzp_badge_class}">🛡️ {rzp_badge_text}</span>
+            <span class="badge-capsule {ai_badge_class}">🧠 {ai_badge_text}</span>
         </div>
     </div>
     """,
@@ -252,10 +464,10 @@ col1, col2, col3, col4, col5 = st.columns(5, gap="small")
 with col1:
     st.markdown(
         f"""
-        <div class="metric-card">
-            <div class="metric-label">Revenue At Risk</div>
-            <div class="metric-val">INR {live_metrics.total_revenue_at_risk:,.0f}</div>
-            <div class="metric-caption">{total_records} Orders (Failed: INR {live_metrics.total_failed_volume:,.0f} • At-Risk: INR {live_metrics.total_at_risk_volume:,.0f})</div>
+        <div class="kpi-card-dark">
+            <div class="kpi-title">Revenue At Risk</div>
+            <div class="kpi-num">{format_inr(live_metrics.total_revenue_at_risk)}</div>
+            <div class="kpi-sub" title="Exact: ₹{live_metrics.total_revenue_at_risk:,.2f}">{total_records} Orders (Failed: {format_inr(live_metrics.total_failed_volume)} • At-Risk: {format_inr(live_metrics.total_at_risk_volume)})</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -264,18 +476,18 @@ with col1:
 with col2:
     links_created = getattr(live_metrics, "payment_links_created", 0)
     if client.is_mock:
-        rev_label = "Simulated Recovered Revenue"
-        caption_text = f"{live_metrics.successful_recoveries} Simulated Recoveries • {links_created} Links Created"
+        rev_label = "Simulated Recovered"
+        caption_text = f"{live_metrics.successful_recoveries} Recoveries • {links_created} Links"
     else:
-        rev_label = "Confirmed Recovered Revenue"
-        caption_text = f"{live_metrics.successful_recoveries} Confirmed Paid • {links_created} Links Created"
+        rev_label = "Confirmed Recovered"
+        caption_text = f"{live_metrics.successful_recoveries} Confirmed Paid • {links_created} Links"
 
     st.markdown(
         f"""
-        <div class="metric-card" style="border-left: 4px solid #10b981;">
-            <div class="metric-label">{rev_label}</div>
-            <div class="metric-val" style="color: #059669;">INR {live_metrics.total_recovered_revenue:,.0f}</div>
-            <div class="metric-caption">{caption_text}</div>
+        <div class="kpi-card-dark" style="border-top: 2px solid #10b981;">
+            <div class="kpi-title" style="color: #34d399;">{rev_label}</div>
+            <div class="kpi-num" style="color: #10b981;">{format_inr(live_metrics.total_recovered_revenue)}</div>
+            <div class="kpi-sub" title="Exact: ₹{live_metrics.total_recovered_revenue:,.2f}">{caption_text}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -284,10 +496,10 @@ with col2:
 with col3:
     st.markdown(
         f"""
-        <div class="metric-card">
-            <div class="metric-label">Recovery Rate</div>
-            <div class="metric-val" style="color: #2563eb;">{live_metrics.recovery_rate:.1f}%</div>
-            <div class="metric-caption">Of total failed opportunities</div>
+        <div class="kpi-card-dark" style="border-top: 2px solid #38bdf8;">
+            <div class="kpi-title" style="color: #38bdf8;">Recovery Rate</div>
+            <div class="kpi-num" style="color: #38bdf8;">{live_metrics.recovery_rate:.1f}%</div>
+            <div class="kpi-sub">Portfolio efficiency</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -297,22 +509,23 @@ with col4:
     pending_count = len(st.session_state.queue.list_pending_requests())
     st.markdown(
         f"""
-        <div class="metric-card">
-            <div class="metric-label">Pending Approvals</div>
-            <div class="metric-val" style="color: #d97706;">{pending_count}</div>
-            <div class="metric-caption">Transactions > INR 15,000</div>
+        <div class="kpi-card-dark" style="border-top: 2px solid #f59e0b;">
+            <div class="kpi-title" style="color: #fbbf24;">Pending Approvals</div>
+            <div class="kpi-num" style="color: #f59e0b;">{pending_count}</div>
+            <div class="kpi-sub">Transactions &gt; ₹15,000</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 with col5:
+    halt_count = live_metrics.blocked_actions + live_metrics.escalations
     st.markdown(
         f"""
-        <div class="metric-card">
-            <div class="metric-label">Blocked / Escalated</div>
-            <div class="metric-val" style="color: #dc2626;">{live_metrics.blocked_actions + live_metrics.escalations}</div>
-            <div class="metric-caption">Fraud & safety guardrails</div>
+        <div class="kpi-card-dark" style="border-top: 2px solid #f43f5e;">
+            <div class="kpi-title" style="color: #fb7185;">Terminal Stops</div>
+            <div class="kpi-num" style="color: #f43f5e;">{halt_count}</div>
+            <div class="kpi-sub">Fraud & safety guardrails</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -326,20 +539,90 @@ st.markdown("<br/>", unsafe_allow_html=True)
 # ---------------------------------------------------------------------------
 tab_overview, tab_queue, tab_workbench, tab_approval, tab_audit, tab_batch = st.tabs([
     "📊 Overview",
-    "📋 Recovery Queue",
-    "⚡ AI Workbench",
-    "🛡️ Approval Queue",
+    "⚡ Recovery Queue",
+    "🧠 AI Decision Studio",
+    "🛡️ Approval Center",
     "📜 Audit Trail",
-    "🚀 Batch Simulation",
+    "🚀 Autonomous Simulation",
 ])
 
 
 # ===========================================================================
-# TAB 1: OVERVIEW
+# TAB 1: OVERVIEW & COCKPIT
 # ===========================================================================
 with tab_overview:
-    st.subheader("Autonomous Revenue Recovery Overview")
-    st.caption("Real-time telemetry showing recovery performance, action distribution, and root cause failure breakdown.")
+    # Action Center / What Needs Attention
+    pending_high_val = len(st.session_state.queue.list_pending_requests())
+    outcomes_dict = st.session_state.outcomes
+    failed_executions = sum(1 for o in outcomes_dict.values() if not o.get("execution", RazorpayExecutionResult(success=True)).success)
+    links_generated = live_metrics.payment_links_created
+
+    st.markdown(
+        f"""
+        <div class="attention-box">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 1.6rem;">⚡</div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc;">Autonomous Engine Status: Active Telemetry</div>
+                    <div style="font-size: 0.8rem; color: #94a3b8;">
+                        • <b>{pending_high_val} high-value orders</b> held at policy gate &nbsp;|&nbsp; 
+                        • <b>{links_generated} recovery links</b> active &nbsp;|&nbsp; 
+                        • <b>{failed_executions} failed executions</b> requiring attention
+                    </div>
+                </div>
+            </div>
+            <span class="badge-capsule badge-cyan-glow">REAL-TIME TELEMETRY</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Signature Visual: The Connected Revenue Recovery Pipeline
+    st.markdown(
+        """
+        <div style="margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
+            Autonomous Recovery Pipeline Architecture
+        </div>
+        <div class="recovery-map">
+            <div class="map-step active">
+                <div class="map-step-label">1. Gateway Ingestion</div>
+                <div class="map-step-val" style="color: #f8fafc;">500 Records</div>
+                <div style="font-size: 0.65rem; color: #38bdf8;">Webhooks / APIs</div>
+            </div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">2. AI Diagnosis</div>
+                <div class="map-step-val" style="color: #38bdf8;">Gemini 2.5</div>
+                <div style="font-size: 0.65rem; color: #94a3b8;">Heuristic Fallback</div>
+            </div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">3. Policy Gate</div>
+                <div class="map-step-val" style="color: #fbbf24;">100% Guarded</div>
+                <div style="font-size: 0.65rem; color: #94a3b8;">Zero Overrides</div>
+            </div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">4. Human Gate</div>
+                <div class="map-step-val" style="color: #f59e0b;">&gt; ₹15,000</div>
+                <div style="font-size: 0.65rem; color: #94a3b8;">Merchant Sign-off</div>
+            </div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">5. Razorpay Engine</div>
+                <div class="map-step-val" style="color: #34d399;">Execution</div>
+                <div style="font-size: 0.65rem; color: #94a3b8;">Links / Retries</div>
+            </div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">6. Immutable Audit</div>
+                <div class="map-step-val" style="color: #10b981;">Provenance</div>
+                <div style="font-size: 0.65rem; color: #94a3b8;">Full Ledger</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     chart_col1, chart_col2 = st.columns(2)
 
@@ -356,16 +639,23 @@ with tab_overview:
             y="Count",
             color="Action",
             color_discrete_map={
-                "PAYMENT_LINK": "#3b82f6",
+                "PAYMENT_LINK": "#38bdf8",
                 "RETRY": "#10b981",
-                "INCENTIVE": "#8b5cf6",
+                "INCENTIVE": "#6366f1",
                 "ESCALATE": "#f59e0b",
-                "STOP": "#ef4444",
+                "STOP": "#f43f5e",
                 "REMINDER": "#06b6d4",
             },
-            title="AI Recovery Strategy Distribution",
+            title="Autonomous Recovery Strategy Allocations",
+            template="plotly_dark",
         )
-        fig_action.update_layout(showlegend=False, plot_bgcolor="rgba(0,0,0,0)", margin=dict(t=40, b=20, l=20, r=20))
+        fig_action.update_layout(
+            showlegend=False,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Plus Jakarta Sans, sans-serif", color="#94a3b8"),
+            margin=dict(t=40, b=20, l=20, r=20),
+        )
         st.plotly_chart(fig_action, use_container_width=True)
 
     with chart_col2:
@@ -379,52 +669,74 @@ with tab_overview:
             reason_counts,
             names="Failure Reason",
             values="Count",
-            hole=0.45,
-            title="Gateway Failure Root Cause Breakdown",
-            color_discrete_sequence=px.colors.qualitative.Safe,
+            hole=0.55,
+            title="Gateway Payment Failure Root Causes",
+            color_discrete_sequence=["#38bdf8", "#6366f1", "#10b981", "#f59e0b", "#f43f5e", "#06b6d4"],
+            template="plotly_dark",
         )
-        fig_reason.update_layout(margin=dict(t=40, b=20, l=20, r=20))
+        fig_reason.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Plus Jakarta Sans, sans-serif", color="#94a3b8"),
+            margin=dict(t=40, b=20, l=20, r=20),
+        )
         st.plotly_chart(fig_reason, use_container_width=True)
 
-    st.markdown("---")
-
     # Financial Impact Breakdown
-    st.subheader("Financial Impact & Recovery Health")
+    st.markdown("### 💰 Financial Exposure & Capital Recovery Ledger")
     sum_col1, sum_col2, sum_col3 = st.columns(3)
     with sum_col1:
-        st.info(
-            f"**Total Gross Failed Volume**: INR {total_failed_vol:,.2f}\n\n"
-            f"**Average Order Value**: INR {total_failed_vol/total_records:,.2f}"
+        st.markdown(
+            f"""
+            <div class="panel-card" style="border-left: 3px solid #38bdf8;">
+                <div class="kpi-title">Gross Failure Exposure</div>
+                <div style="font-size: 1.3rem; font-weight: 700; color: #f8fafc; margin: 0.3rem 0;">{format_inr(live_metrics.total_failed_volume, compact=False)}</div>
+                <div style="font-size: 0.8rem; color: #94a3b8;">Average Order Value: {format_inr(live_metrics.total_failed_volume/total_records)}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
     with sum_col2:
-        st.success(
-            f"**Net Recovered Volume**: INR {live_metrics.net_recovered_revenue:,.2f}\n\n"
-            f"**Incentives Disbursed**: INR {live_metrics.incentive_amount_given:,.2f} (Max 10% cap)"
+        st.markdown(
+            f"""
+            <div class="panel-card" style="border-left: 3px solid #10b981;">
+                <div class="kpi-title">Net Capital Recovered</div>
+                <div style="font-size: 1.3rem; font-weight: 700; color: #10b981; margin: 0.3rem 0;">{format_inr(live_metrics.net_recovered_revenue, compact=False)}</div>
+                <div style="font-size: 0.8rem; color: #94a3b8;">Incentives Disbursed: {format_inr(live_metrics.incentive_amount_given)} (10% Cap Enforced)</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
     with sum_col3:
-        st.warning(
-            f"**High-Value Transactions Held**: {live_metrics.approvals_requested}\n\n"
-            f"**Terminal Stops Enforced**: {sum(1 for r in records if precomputed[r.payment_id]['action'] == 'STOP')}"
+        st.markdown(
+            f"""
+            <div class="panel-card" style="border-left: 3px solid #f59e0b;">
+                <div class="kpi-title">Security &amp; Policy Holds</div>
+                <div style="font-size: 1.3rem; font-weight: 700; color: #fbbf24; margin: 0.3rem 0;">{live_metrics.approvals_requested} High-Value Held</div>
+                <div style="font-size: 0.8rem; color: #94a3b8;">{sum(1 for r in records if precomputed[r.payment_id]['action'] == 'STOP')} Terminal Security Stops Active</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
 
 # ===========================================================================
-# TAB 2: RECOVERY QUEUE & TRANSACTION DETAILS
+# TAB 2: RECOVERY QUEUE & TRANSACTION WORKSPACE
 # ===========================================================================
 with tab_queue:
-    st.subheader("Payment Failure Ingestion Queue (500 Transactions)")
-    st.caption("Search, filter, inspect, and execute policy-governed recoveries for individual merchant transactions.")
+    st.markdown("### ⚡ Live Failure Ingestion & Transaction Queue")
+    st.caption("Inspect inbound payment events, review AI diagnoses, and execute automated recovery operations.")
 
     # Search & Filter Controls
     filt_c1, filt_c2, filt_c3, filt_c4 = st.columns(4)
     with filt_c1:
-        reason_filter = st.selectbox("Filter by Failure Reason", ["All"] + [r.value for r in FailureReason])
+        reason_filter = st.selectbox("Failure Reason", ["All"] + [r.value for r in FailureReason])
     with filt_c2:
-        action_filter = st.selectbox("Filter by AI Action", ["All"] + [a.value for a in RecoveryAction])
+        action_filter = st.selectbox("AI Strategy", ["All"] + [a.value for a in RecoveryAction])
     with filt_c3:
-        policy_filter = st.selectbox("Filter by Policy Decision", ["All", "ALLOWED", "REQUIRES_APPROVAL", "BLOCKED"])
+        policy_filter = st.selectbox("Policy Gate", ["All", "ALLOWED", "REQUIRES_APPROVAL", "BLOCKED"])
     with filt_c4:
-        amount_filter = st.selectbox("Filter by Amount Range", ["All", "Under INR 5,000", "INR 5,000 - 15,000", "High Value (> INR 15,000)"])
+        amount_filter = st.selectbox("Order Value", ["All", "Under ₹5,000", "₹5,000 - ₹15,000", "High Value (> ₹15,000)"])
 
     # Build DataFrame
     table_data = []
@@ -446,25 +758,25 @@ with tab_queue:
             continue
         if policy_filter != "All" and pol != policy_filter:
             continue
-        if amount_filter == "Under INR 5,000" and r.amount >= 5000:
+        if amount_filter == "Under ₹5,000" and r.amount >= 5000:
             continue
-        if amount_filter == "INR 5,000 - 15,000" and (r.amount < 5000 or r.amount > 15000):
+        if amount_filter == "₹5,000 - ₹15,000" and (r.amount < 5000 or r.amount > 15000):
             continue
-        if amount_filter == "High Value (> INR 15,000)" and r.amount <= 15000:
+        if amount_filter == "High Value (> ₹15,000)" and r.amount <= 15000:
             continue
 
         table_data.append({
             "Payment ID": r.payment_id,
             "Customer": r.customer_name,
-            "Amount": f"INR {r.amount:,.2f}",
+            "Amount": format_inr(r.amount, compact=False),
             "Raw Amount": r.amount,
             "Failure Reason": r.failure_reason.value,
-            "Retries": r.retry_count,
-            "Customer History": f"{r.customer_previous_payments} orders (INR {r.customer_total_spend:,.0f})",
+            "Retries": f"{r.retry_count} / 2",
+            "Customer LTV": f"{r.customer_previous_payments} txns ({format_inr(r.customer_total_spend)})",
             "AI Action": act,
             "Confidence": f"{diag['confidence']*100:.0f}%",
-            "Policy Decision": pol,
-            "Status": current_status,
+            "Policy Gate": pol,
+            "Current Status": current_status,
         })
 
     table_df = pd.DataFrame(table_data)
@@ -477,21 +789,21 @@ with tab_queue:
             hide_index=True,
         )
     else:
-        st.warning("No records match the selected filters.")
+        st.warning("No records match the selected filter criteria.")
 
     st.markdown("---")
 
     # Transaction Detail Selection
-    st.subheader("🔍 Transaction Recovery Detail & Workbench")
+    st.markdown("### 🔍 Interactive Transaction Recovery Workspace")
     selected_pid = st.selectbox(
-        "Select a Payment ID to inspect and recover:",
+        "Select an Ingested Payment to Inspect & Recover:",
         options=[r.payment_id for r in records],
         index=0,
     )
 
     selected_payment = next(r for r in records if r.payment_id == selected_pid)
 
-    # 1. Horizontal Workflow Centerpiece
+    # 1. Connected Horizontal Workflow
     has_outcome = selected_pid in st.session_state.outcomes
     current_outcome = st.session_state.outcomes.get(selected_pid, {})
     exec_res = current_outcome.get("execution")
@@ -500,10 +812,10 @@ with tab_queue:
     st.session_state["active_ai_mode"] = ai_rec_curr.agent_mode
     policy_curr = evaluate_policy(selected_payment, ai_rec_curr.action, proposed_discount_pct=ai_rec_curr.proposed_discount_pct)
 
-    appr_status_text = "NOT REQUIRED" if not policy_curr.requires_approval else ("APPROVED" if st.session_state.queue.is_approved(selected_pid) else "PENDING")
+    appr_status_text = "BYPASSED" if not policy_curr.requires_approval else ("APPROVED" if st.session_state.queue.is_approved(selected_pid) else "PENDING SIGN-OFF")
     if exec_res:
         if exec_res.success:
-            rzp_status_text = "EXECUTED"
+            rzp_status_text = "DISPATCHED"
         elif exec_res.error_code == "RATE_LIMITED":
             rzp_status_text = "RATE LIMITED (429)"
         else:
@@ -511,78 +823,89 @@ with tab_queue:
     elif policy_curr.decision == PolicyDecisionType.BLOCKED:
         rzp_status_text = "BLOCKED"
     elif policy_curr.requires_approval:
-        rzp_status_text = "PENDING APPROVAL"
+        rzp_status_text = "HELD"
     else:
-        rzp_status_text = "PENDING"
-    final_status_text = current_outcome.get("status", selected_payment.payment_status.value)
+        rzp_status_text = "READY"
+
+    pol_color = "#34d399" if policy_curr.decision == PolicyDecisionType.ALLOWED else ("#fbbf24" if policy_curr.decision == PolicyDecisionType.REQUIRES_APPROVAL else "#fb7185")
+    appr_color = "#34d399" if appr_status_text != "PENDING SIGN-OFF" else "#fbbf24"
 
     st.markdown(
         f"""
-        <div class="workflow-container">
-            <div class="flow-step">
-                <div class="flow-step-title">1. Detection</div>
-                <div class="flow-step-status" style="color: #059669;">✓ Ingested</div>
+        <div class="recovery-map">
+            <div class="map-step active">
+                <div class="map-step-label">1. Ingested</div>
+                <div class="map-step-val" style="color: #38bdf8;">✓ RECEIVED</div>
             </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-                <div class="flow-step-title">2. AI Diagnosis</div>
-                <div class="flow-step-status" style="color: #2563eb;">✓ {ai_rec_curr.action.value}</div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">2. AI Diagnosis</div>
+                <div class="map-step-val" style="color: #38bdf8;">{ai_rec_curr.action.value}</div>
             </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-                <div class="flow-step-title">3. Policy Gate</div>
-                <div class="flow-step-status" style="color: {'#059669' if policy_curr.decision == PolicyDecisionType.ALLOWED else '#d97706'};">✓ {policy_curr.decision.value}</div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">3. Policy Gate</div>
+                <div class="map-step-val" style="color: {pol_color};">{policy_curr.decision.value}</div>
             </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-                <div class="flow-step-title">4. Merchant Review</div>
-                <div class="flow-step-status" style="color: {'#059669' if appr_status_text != 'PENDING' else '#d97706'};">{appr_status_text}</div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">4. Approval</div>
+                <div class="map-step-val" style="color: {appr_color};">{appr_status_text}</div>
             </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-                <div class="flow-step-title">5. Razorpay</div>
-                <div class="flow-step-status">{rzp_status_text}</div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">5. Razorpay</div>
+                <div class="map-step-val" style="color: #f8fafc;">{rzp_status_text}</div>
             </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-                <div class="flow-step-title">6. Audit Trail</div>
-                <div class="flow-step-status" style="color: #059669;">✓ Logged</div>
+            <div class="map-arrow">➔</div>
+            <div class="map-step active">
+                <div class="map-step-label">6. Audit Trail</div>
+                <div class="map-step-val" style="color: #10b981;">LOGGED</div>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # 2. Detail Columns
+    # 2. Detail 3-Column Workspace
     det_c1, det_c2, det_c3 = st.columns([1.2, 1.4, 1.4])
 
     with det_c1:
-        st.markdown("**Transaction & Customer Profile**")
-        st.write(f"• **Customer**: {selected_payment.customer_name} (`{selected_payment.customer_id}`)")
-        st.write(f"• **Amount**: INR {selected_payment.amount:,.2f}")
-        st.write(f"• **Order ID**: `{selected_payment.order_id}`")
-        st.write(f"• **Category**: {selected_payment.product_category.value}")
-        st.write(f"• **Failure Code**: `{selected_payment.failure_reason.value}`")
-        st.write(f"• **Error Message**: {selected_payment.error_description}")
-        st.write(f"• **Prior Retries**: {selected_payment.retry_count} (Max 2)")
-        st.write(f"• **Past Spend**: INR {selected_payment.customer_total_spend:,.2f} ({selected_payment.customer_previous_payments} orders)")
+        st.markdown(
+            f"""
+            <div class="panel-card">
+                <div class="kpi-title" style="color: #38bdf8; margin-bottom: 0.5rem;">Transaction &amp; Customer Profile</div>
+                <div style="font-size: 0.85rem; line-height: 1.6; color: #cbd5e1;">
+                    • <b>Customer</b>: {selected_payment.customer_name} (<span class="font-mono">{selected_payment.customer_id}</span>)<br/>
+                    • <b>Order Amount</b>: <span style="color: #38bdf8; font-weight: 700;">{format_inr(selected_payment.amount, compact=False)}</span><br/>
+                    • <b>Order ID</b>: <span class="font-mono">{selected_payment.order_id}</span><br/>
+                    • <b>Category</b>: {selected_payment.product_category.value}<br/>
+                    • <b>Failure Code</b>: <span class="font-mono">{selected_payment.failure_reason.value}</span><br/>
+                    • <b>Error Details</b>: {selected_payment.error_description}<br/>
+                    • <b>Prior Retries</b>: {selected_payment.retry_count} / 2<br/>
+                    • <b>Past Spend</b>: {format_inr(selected_payment.customer_total_spend, compact=False)} ({selected_payment.customer_previous_payments} txns)
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     with det_c2:
         st.markdown(
             f"""
-            <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem;">
-                <div style="font-size: 0.75rem; font-weight: 700; color: #1e40af; text-transform: uppercase;">
-                    🤖 AI Proposal (Advisory Only)
+            <div class="panel-card" style="border: 1px solid rgba(56, 189, 248, 0.3);">
+                <div class="kpi-title" style="color: #38bdf8; display: flex; justify-content: space-between;">
+                    <span>🧠 AI Proposal (Advisory)</span>
+                    <span>{ai_rec_curr.confidence*100:.0f}% Confidence</span>
                 </div>
-                <div style="font-size: 1.3rem; font-weight: 700; color: #1e3a8a; margin: 0.3rem 0;">
+                <div style="font-size: 1.35rem; font-weight: 800; color: #38bdf8; margin: 0.4rem 0;">
                     {ai_rec_curr.action.value}
                 </div>
-                <p style="font-size: 0.85rem; color: #334155; margin: 0.4rem 0;">{ai_rec_curr.reason}</p>
-                <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid #e2e8f0;"/>
-                <div style="font-size: 0.8rem; color: #64748b;">
-                    <b>Confidence</b>: {ai_rec_curr.confidence*100:.0f}% &nbsp;|&nbsp; 
-                    <b>Risk</b>: {ai_rec_curr.risk_level} &nbsp;|&nbsp; 
-                    <b>Decision Source</b>: {"Gemini" if ai_rec_curr.agent_mode == "gemini" else "Deterministic Fallback"}
+                <p style="font-size: 0.82rem; color: #cbd5e1; margin: 0.4rem 0; line-height: 1.5;">{ai_rec_curr.reason}</p>
+                <hr style="margin: 0.6rem 0; border: none; border-top: 1px solid rgba(255,255,255,0.08);"/>
+                <div style="font-size: 0.75rem; color: #94a3b8;">
+                    <b>Risk Level</b>: <span class="badge-capsule badge-slate-pill">{ai_rec_curr.risk_level}</span> &nbsp;|&nbsp; 
+                    <b>Engine</b>: {"Gemini 2.5 Flash" if ai_rec_curr.agent_mode == "gemini" else "Deterministic Fallback"}
                 </div>
             </div>
             """,
@@ -590,24 +913,23 @@ with tab_queue:
         )
 
     with det_c3:
-        pol_color = "#15803d" if policy_curr.decision == PolicyDecisionType.ALLOWED else ("#b45309" if policy_curr.decision == PolicyDecisionType.REQUIRES_APPROVAL else "#b91c1c")
-        pol_bg = "#f0fdf4" if policy_curr.decision == PolicyDecisionType.ALLOWED else ("#fffbeb" if policy_curr.decision == PolicyDecisionType.REQUIRES_APPROVAL else "#fef2f2")
-        pol_border = "#bbf7d0" if policy_curr.decision == PolicyDecisionType.ALLOWED else ("#fde68a" if policy_curr.decision == PolicyDecisionType.REQUIRES_APPROVAL else "#fecaca")
+        pol_box_border = "rgba(52, 211, 153, 0.3)" if policy_curr.decision == PolicyDecisionType.ALLOWED else ("rgba(251, 191, 36, 0.3)" if policy_curr.decision == PolicyDecisionType.REQUIRES_APPROVAL else "rgba(251, 113, 133, 0.3)")
+        pol_box_title = "#34d399" if policy_curr.decision == PolicyDecisionType.ALLOWED else ("#fbbf24" if policy_curr.decision == PolicyDecisionType.REQUIRES_APPROVAL else "#fb7185")
 
         st.markdown(
             f"""
-            <div style="background: {pol_bg}; border: 1px solid {pol_border}; border-radius: 8px; padding: 1rem;">
-                <div style="font-size: 0.75rem; font-weight: 700; color: {pol_color}; text-transform: uppercase;">
-                    ⚖️ Deterministic Policy Engine (Authoritative)
+            <div class="panel-card" style="border: 1px solid {pol_box_border};">
+                <div class="kpi-title" style="color: {pol_box_title};">
+                    ⚖️ Deterministic Policy Gate (Authoritative)
                 </div>
-                <div style="font-size: 1.3rem; font-weight: 700; color: {pol_color}; margin: 0.3rem 0;">
+                <div style="font-size: 1.35rem; font-weight: 800; color: {pol_box_title}; margin: 0.4rem 0;">
                     {policy_curr.decision.value}
                 </div>
-                <p style="font-size: 0.85rem; color: #334155; margin: 0.4rem 0;">{policy_curr.reason}</p>
-                <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid {pol_border};"/>
-                <div style="font-size: 0.8rem; color: #64748b;">
-                    <b>Policy Codes</b>: {", ".join(policy_curr.policy_codes)}<br/>
-                    <b>Final Payable</b>: INR {policy_curr.final_payable_amount:,.2f} (Discount: INR {policy_curr.effective_discount:,.2f})
+                <p style="font-size: 0.82rem; color: #cbd5e1; margin: 0.4rem 0; line-height: 1.5;">{policy_curr.reason}</p>
+                <hr style="margin: 0.6rem 0; border: none; border-top: 1px solid rgba(255,255,255,0.08);"/>
+                <div style="font-size: 0.75rem; color: #94a3b8;">
+                    <b>Policy Codes</b>: <span class="font-mono">{", ".join(policy_curr.policy_codes)}</span><br/>
+                    <b>Net Payable</b>: {format_inr(policy_curr.final_payable_amount, compact=False)} (Discount: {format_inr(policy_curr.effective_discount, compact=False)})
                 </div>
             </div>
             """,
@@ -638,7 +960,7 @@ with tab_queue:
             st.warning("⚠️ High-value transaction requires merchant approval before execution.")
             is_appr = st.session_state.queue.is_approved(selected_pid)
             if not is_appr:
-                if st.button("🛡️ Route to Merchant Approval Queue", key=f"queue_{selected_pid}"):
+                if st.button("🛡️ Route to Merchant Approval Center", key=f"queue_{selected_pid}"):
                     st.session_state.queue.create_request(
                         payment_id=selected_pid,
                         customer_id=selected_payment.customer_id,
@@ -653,9 +975,9 @@ with tab_queue:
                         event_type=EVENT_APPROVAL_REQUESTED,
                         action=ai_rec_curr.action.value,
                         status="PENDING",
-                        message=f"Approval request queued for high-value transaction INR {selected_payment.amount:,.2f}.",
+                        message=f"Approval request queued for high-value transaction {format_inr(selected_payment.amount, compact=False)}.",
                     )
-                    st.success("Successfully queued for review in Tab 4 (Approval Queue)!")
+                    st.success("Successfully queued for review in Tab 4 (Approval Center)!")
                     st.rerun()
             else:
                 st.success("Merchant approval granted! Safe to execute.")
@@ -679,18 +1001,18 @@ with tab_queue:
     with ctrl_col2:
         if exec_res:
             if exec_res.success:
-                st.markdown("**Recovery Action Executed:**")
+                st.markdown("**Gateway Execution Result:**")
                 st.success(f"✓ Recovery Action Executed: {exec_res.action.value}")
                 st.json({
                     "Recovery Attempt ID": exec_res.recovery_id,
                     "Razorpay Link/Order ID": exec_res.razorpay_id,
                     "Execution Status": "Recovery Action Executed (Link Dispatched)" if not exec_res.simulated else "Simulated Action Executed",
-                    "Amount": f"INR {exec_res.amount:,.2f}",
+                    "Amount": format_inr(exec_res.amount, compact=False),
                     "Short URL": exec_res.short_url,
                     "Simulated": exec_res.simulated,
                 })
             else:
-                st.markdown("**Recovery Action Failed:**")
+                st.markdown("**Gateway Execution Result:**")
                 st.error(f"❌ Execution Error: {exec_res.message}")
                 if exec_res.error_code == "RATE_LIMITED":
                     st.warning("⚠️ **Razorpay Rate Limited (HTTP 429)**: Too many requests. Safe backoff required. This action was NOT executed and is NOT counted as recovered revenue.")
@@ -704,17 +1026,17 @@ with tab_queue:
 
 
 # ===========================================================================
-# TAB 3: AI WORKBENCH & DEMO SCENARIOS
+# TAB 3: AI DECISION STUDIO & SAFETY LAB
 # ===========================================================================
 with tab_workbench:
-    st.subheader("⚡ AI Recovery Workbench & Judging Demo Scenarios")
-    st.caption("Curated scenarios engineered for the 5-minute hackathon pitch to showcase AI-Policy synergy.")
+    st.markdown("### 🧠 AI Decision Studio & Adversarial Safety Lab")
+    st.caption("Inspect how the AI reasoning engine evaluates context, and verify that the deterministic policy layer blocks adversarial attacks.")
 
     demo_scenario = st.radio(
         "Select an automated demonstration scenario:",
         [
             "1. Standard Autonomous Recovery (Transient Timeout)",
-            "2. High-Value B2B Order Gate (> INR 15,000 Approval)",
+            "2. High-Value B2B Order Gate (> ₹15,000 Approval Required)",
             "3. Suspected Fraud Lockout (Terminal Security Risk)",
             "4. Exhausted Retry Limit (Max 2 Attempts Reached)",
         ],
@@ -738,51 +1060,78 @@ with tab_workbench:
 
     col_w1, col_w2, col_w3 = st.columns(3)
     with col_w1:
-        st.markdown("**1. Raw Ingested Payment**")
-        st.write(f"• ID: `{demo_record.payment_id}`")
-        st.write(f"• Amount: **INR {demo_record.amount:,.2f}**")
-        st.write(f"• Reason: `{demo_record.failure_reason.value}`")
-        st.write(f"• Retries: **{demo_record.retry_count} / 2**")
-        st.write(f"• Customer: {demo_record.customer_name}")
+        st.markdown(
+            f"""
+            <div class="panel-card">
+                <div class="kpi-title" style="color: #38bdf8;">1. Raw Ingested Payment</div>
+                <div style="font-size: 0.85rem; line-height: 1.6; color: #cbd5e1; margin-top: 0.5rem;">
+                    • <b>Payment ID</b>: <span class="font-mono">{demo_record.payment_id}</span><br/>
+                    • <b>Amount</b>: <span style="color: #38bdf8; font-weight: 700;">{format_inr(demo_record.amount, compact=False)}</span><br/>
+                    • <b>Reason</b>: <span class="font-mono">{demo_record.failure_reason.value}</span><br/>
+                    • <b>Retries</b>: {demo_record.retry_count} / 2<br/>
+                    • <b>Customer</b>: {demo_record.customer_name}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     demo_ai = agent.recommend(demo_record)
     demo_policy = evaluate_policy(demo_record, demo_ai.action, proposed_discount_pct=demo_ai.proposed_discount_pct)
 
     with col_w2:
-        st.markdown("**2. AI Recommendation**")
-        st.write(f"• Action: **{demo_ai.action.value}**")
-        st.write(f"• Confidence: **{demo_ai.confidence*100:.0f}%**")
-        st.write(f"• Risk Level: `{demo_ai.risk_level}`")
-        st.write(f"• Rationale: {demo_ai.reason}")
+        st.markdown(
+            f"""
+            <div class="panel-card" style="border: 1px solid rgba(56, 189, 248, 0.3);">
+                <div class="kpi-title" style="color: #38bdf8;">2. AI Recommendation</div>
+                <div style="font-size: 0.85rem; line-height: 1.6; color: #cbd5e1; margin-top: 0.5rem;">
+                    • <b>Action</b>: <span style="color: #38bdf8; font-weight: 700;">{demo_ai.action.value}</span><br/>
+                    • <b>Confidence</b>: {demo_ai.confidence*100:.0f}%<br/>
+                    • <b>Risk Level</b>: {demo_ai.risk_level}<br/>
+                    • <b>Rationale</b>: {demo_ai.reason}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     with col_w3:
-        st.markdown("**3. Policy Engine Verdict**")
-        st.write(f"• Decision: **{demo_policy.decision.value}**")
-        st.write(f"• Allowed: **{demo_policy.allowed}**")
-        st.write(f"• Requires Approval: **{demo_policy.requires_approval}**")
-        st.write(f"• Policy Codes: `{demo_policy.policy_codes}`")
-        st.write(f"• Explanation: {demo_policy.reason}")
+        pol_code_str = ", ".join(demo_policy.policy_codes) if demo_policy.policy_codes else "NONE"
+        st.markdown(
+            f"""
+            <div class="panel-card" style="border: 1px solid {pol_box_border};">
+                <div class="kpi-title" style="color: #34d399;">3. Policy Engine Verdict</div>
+                <div style="font-size: 0.85rem; line-height: 1.6; color: #cbd5e1; margin-top: 0.5rem;">
+                    • <b>Decision</b>: <span style="font-weight: 700;">{demo_policy.decision.value}</span><br/>
+                    • <b>Requires Approval</b>: {demo_policy.requires_approval}<br/>
+                    • <b>Policy Codes</b>: <span class="font-mono">{pol_code_str}</span><br/>
+                    • <b>Explanation</b>: {demo_policy.reason}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     if demo_policy.requires_approval:
         st.warning(f"⚠️ **Approval Rationale**: {demo_policy.reason}")
 
     st.markdown("---")
 
-    # Deliberate Safety Failure Playground Button
-    st.subheader("🚨 Deliberate Safety Failure Playground")
-    st.caption("Demonstrate to judges that an unauthorized prompt or malicious discount cannot bypass the deterministic safety layer.")
+    # Deliberate Safety Failure Playground Button (Attack vs Defense)
+    st.markdown("### 🚨 Adversarial Safety Playground (Attack vs Defense)")
+    st.caption("Demonstrate that an unauthorized prompt injection or excessive incentive discount cannot bypass the deterministic safety layer.")
 
     fail_col1, fail_col2 = st.columns(2)
     with fail_col1:
         sim_action = st.selectbox(
-            "Simulate AI Action Proposal:",
+            "Simulate AI Action Proposal (Attacker Action):",
             [RecoveryAction.INCENTIVE.value, RecoveryAction.RETRY.value, "UNAUTHORIZED_SWIFT_TRANSFER"],
             index=0,
         )
-        sim_discount = st.slider("Simulate Proposed Discount Percentage:", 0, 50, 25)
+        sim_discount = st.slider("Simulate Proposed Discount Percentage (Attacker Discount):", 0, 50, 25)
     with fail_col2:
         test_viol = evaluate_policy(demo_record, sim_action, proposed_discount_pct=float(sim_discount))
-        st.markdown("**Policy Engine Reaction:**")
+        st.markdown("**Deterministic Policy Engine Defense:**")
         if test_viol.decision == PolicyDecisionType.BLOCKED:
             st.error(f"❌ VIOLATION INTERCEPTED & BLOCKED:\n\n{test_viol.reason}")
             st.caption(f"**Policy Code**: `{', '.join(test_viol.policy_codes)}` • Deterministic policy prevents excessive incentives.")
@@ -793,36 +1142,66 @@ with tab_workbench:
 
 
 # ===========================================================================
-# TAB 4: APPROVAL QUEUE (HUMAN-IN-THE-LOOP)
+# TAB 4: APPROVAL CENTER (HUMAN-IN-THE-LOOP)
 # ===========================================================================
 with tab_approval:
-    st.subheader("🛡️ Merchant Review & Approval Inbox")
-    st.caption("High-value payments (> INR 15,000) or complex risk profiles strictly require human sign-off before gateway execution.")
+    st.markdown("### 🛡️ Merchant Sign-off & Exposure Review Inbox")
+    st.caption("High-value orders (> ₹15,000) or complex risk profiles strictly require human authorization before gateway execution.")
 
     queue_instance: MerchantApprovalQueue = st.session_state.queue
     pending_reqs = queue_instance.list_pending_requests()
 
+    # Calculate held exposure
+    total_held_val = sum(req.amount for req in pending_reqs)
+
+    appr_stat1, appr_stat2 = st.columns(2)
+    with appr_stat1:
+        st.markdown(
+            f"""
+            <div class="panel-card" style="border-left: 3px solid #f59e0b;">
+                <div class="kpi-title">Pending Authorizations</div>
+                <div style="font-size: 1.3rem; font-weight: 700; color: #fbbf24;">{len(pending_reqs)} High-Value Orders</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with appr_stat2:
+        st.markdown(
+            f"""
+            <div class="panel-card" style="border-left: 3px solid #38bdf8;">
+                <div class="kpi-title">Total Capital Held Under Gate</div>
+                <div style="font-size: 1.3rem; font-weight: 700; color: #38bdf8;">{format_inr(total_held_val, compact=False)}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     if not pending_reqs:
         st.success("🎉 Inbox Zero: All high-value transactions have been reviewed and resolved!")
     else:
-        st.warning(f"Currently **{len(pending_reqs)} transactions** are awaiting merchant review.")
+        st.warning(f"Currently **{len(pending_reqs)} high-value orders** are awaiting merchant sign-off.")
 
         for req in pending_reqs:
             with st.container():
                 st.markdown(
                     f"""
-                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem;">
+                    <div class="panel-card" style="border-left: 3px solid #f59e0b; margin-bottom: 0.8rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 700; font-size: 1.1rem; color: #0f172a;">Request ID: {req.approval_id}</span>
-                            <span class="badge badge-approval">PENDING REVIEW</span>
+                            <span style="font-weight: 700; font-size: 1.05rem; color: #f8fafc;">Request ID: <span class="font-mono">{req.approval_id}</span></span>
+                            <span class="badge-capsule badge-amber-glow">PENDING SIGN-OFF</span>
                         </div>
-                        <p style="margin: 0.4rem 0; color: #475569;">
-                            <b>Payment ID</b>: <code>{req.payment_id}</code> &nbsp;|&nbsp; 
-                            <b>Amount</b>: <span style="font-size: 1.1rem; font-weight: 700; color: #0f172a;">INR {req.amount:,.2f}</span> &nbsp;|&nbsp; 
-                            <b>Customer</b>: {req.customer_id}
-                        </p>
-                        <p style="margin: 0.2rem 0; font-size: 0.9rem;"><b>AI Proposal</b>: Recommends <b>{req.requested_action.value}</b> (Confidence: {req.ai_confidence*100:.0f}%)<br/><i>"{req.ai_reason}"</i></p>
-                        <p style="margin: 0.2rem 0; font-size: 0.9rem; color: #b45309;"><b>Policy Gate Reason</b>: {req.policy_reason}</p>
+                        <div style="margin: 0.5rem 0; color: #cbd5e1; font-size: 0.88rem;">
+                            <b>Payment ID</b>: <span class="font-mono">{req.payment_id}</span> &nbsp;|&nbsp; 
+                            <b>Amount</b>: <span style="font-size: 1.15rem; font-weight: 800; color: #38bdf8;">{format_inr(req.amount, compact=False)}</span> &nbsp;|&nbsp; 
+                            <b>Customer</b>: <span class="font-mono">{req.customer_id}</span>
+                        </div>
+                        <div style="margin: 0.3rem 0; font-size: 0.84rem; color: #94a3b8;">
+                            <b>AI Proposal</b>: Recommends <b>{req.requested_action.value}</b> ({req.ai_confidence*100:.0f}% confidence)<br/>
+                            <i>"{req.ai_reason}"</i>
+                        </div>
+                        <div style="margin: 0.3rem 0; font-size: 0.84rem; color: #fbbf24;">
+                            <b>Policy Intercept</b>: {req.policy_reason}
+                        </div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -830,10 +1209,9 @@ with tab_approval:
 
                 appr_col1, appr_col2, appr_col3 = st.columns([1.5, 1.5, 3])
                 with appr_col1:
-                    if st.button(f"✅ Approve & Dispatch Link", key=f"appr_{req.approval_id}"):
+                    if st.button(f"✅ Authorize & Dispatch", key=f"appr_{req.approval_id}"):
                         queue_instance.approve_request(req.approval_id, reviewer="Merchant Admin", notes="Approved via Dashboard")
                         
-                        # Find original payment record
                         target_p = next(r for r in records if r.payment_id == req.payment_id)
                         pol = evaluate_policy(target_p, req.requested_action)
                         res = client.execute_recovery(target_p, req.requested_action, pol, approved_by_merchant=True)
@@ -857,7 +1235,7 @@ with tab_approval:
                         st.rerun()
 
                 with appr_col2:
-                    if st.button(f"❌ Reject Recovery", key=f"rej_{req.approval_id}"):
+                    if st.button(f"❌ Reject Execution", key=f"rej_{req.approval_id}"):
                         queue_instance.reject_request(req.approval_id, reviewer="Merchant Admin", notes="Rejected by merchant")
                         st.session_state.audit.log_event(
                             payment_id=req.payment_id,
@@ -874,7 +1252,7 @@ with tab_approval:
 # TAB 5: AUDIT TRAIL
 # ===========================================================================
 with tab_audit:
-    st.subheader("📜 Append-Only Chronological Audit Trail")
+    st.markdown("### 📜 Append-Only Chronological Audit Trail")
     st.caption("Immutable ledger providing complete provenance and state reconstruction for financial and regulatory compliance.")
 
     audit_instance: AuditLogger = st.session_state.audit
@@ -909,18 +1287,23 @@ with tab_audit:
 
 
 # ===========================================================================
-# TAB 6: BATCH SIMULATION
+# TAB 6: AUTONOMOUS BATCH SIMULATION
 # ===========================================================================
 with tab_batch:
-    st.subheader("🚀 500-Record Autonomous Recovery Batch Simulation")
+    st.markdown("### 🚀 500-Record Autonomous Recovery Batch Simulation")
     st.caption("Run the complete governed recovery pipeline across all 500 synthetic payment failures to measure portfolio financial recovery and net ROI.")
 
     st.markdown(
         """
-        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-            <b>Simulation Mode</b>: Safe auto-approved actions (< ₹15,000, 0 retries, non-fraud) are executed through the 
-            <b>Razorpay Mock Sandbox</b>. High-value transactions (> ₹15,000) are routed to the <b>Merchant Approval Queue</b> and 
-            never count as recovered until reviewed.
+        <div class="panel-card" style="border: 1px dashed rgba(56, 189, 248, 0.3); margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <b>Simulation Mode</b>: Safe auto-approved actions (&lt; ₹15,000, 0 retries, non-fraud) are executed through the 
+                    <b>Razorpay Mock Sandbox</b>. High-value transactions (&gt; ₹15,000) are routed to the <b>Merchant Approval Center</b> and 
+                    never count as recovered until reviewed.
+                </div>
+                <span class="badge-capsule badge-amber-glow">SIMULATED • MOCK SANDBOX</span>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -961,17 +1344,49 @@ with tab_batch:
 
         b_col1, b_col2, b_col3, b_col4 = st.columns(4)
         with b_col1:
-            st.metric("Total Records Analyzed", f"{bm.total_records:,}")
-            st.metric("Total Volume At Risk", f"INR {bm.total_revenue_at_risk:,.2f}", f"Failed: INR {bm.total_failed_volume:,.0f} • At-Risk: INR {bm.total_at_risk_volume:,.0f}")
+            st.markdown(
+                f"""
+                <div class="kpi-card-dark">
+                    <div class="kpi-title">Records Ingested</div>
+                    <div class="kpi-num">{bm.total_records:,}</div>
+                    <div class="kpi-sub">Total Volume: {format_inr(bm.total_revenue_at_risk)}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         with b_col2:
-            st.metric("Simulated Recoveries", f"{bm.successful_recoveries:,}", f"{bm.recovery_rate:.1f}% Recovery Rate")
-            st.metric("Simulated Recovered Revenue", f"INR {bm.total_recovered_revenue:,.2f}")
+            st.markdown(
+                f"""
+                <div class="kpi-card-dark" style="border-top: 2px solid #10b981;">
+                    <div class="kpi-title" style="color: #34d399;">Simulated Recovered</div>
+                    <div class="kpi-num" style="color: #10b981;">{format_inr(bm.total_recovered_revenue)}</div>
+                    <div class="kpi-sub">{bm.successful_recoveries:,} Orders ({bm.recovery_rate:.1f}% Rate)</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         with b_col3:
-            st.metric("Held in Approval Queue", f"{bm.approvals_requested:,}", "Zero money counted until approved")
-            st.metric("Net Simulated Revenue", f"INR {bm.net_recovered_revenue:,.2f}")
+            st.markdown(
+                f"""
+                <div class="kpi-card-dark" style="border-top: 2px solid #38bdf8;">
+                    <div class="kpi-title" style="color: #38bdf8;">Net Capital Recovered</div>
+                    <div class="kpi-num" style="color: #38bdf8;">{format_inr(bm.net_recovered_revenue)}</div>
+                    <div class="kpi-sub">Held at Policy Gate: {bm.approvals_requested:,} Orders</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         with b_col4:
-            st.metric("Terminal Safety Halts", f"{bm.blocked_actions + bm.escalations:,}", "Fraud & Retry Limit")
-            st.metric("Financial ROI Multiple", f"{bm.roi:,.1f}x")
+            st.markdown(
+                f"""
+                <div class="kpi-card-dark" style="border-top: 2px solid #f59e0b;">
+                    <div class="kpi-title" style="color: #fbbf24;">Financial ROI Multiple</div>
+                    <div class="kpi-num" style="color: #f59e0b;">{bm.roi:,.1f}x</div>
+                    <div class="kpi-sub">Terminal Halts: {bm.blocked_actions + bm.escalations:,} Orders</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         st.caption(
             "⚠️ **SIMULATED RESULTS**: Results are generated from synthetic payment records using Razorpay Mock Sandbox execution. "
